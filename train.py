@@ -59,11 +59,11 @@ def main():
 
     # instantiate the dataset
     if args['dataset'].upper() == 'TRANCOS':
-        train_data = Trancos(train=True, path=args['data_path'], out_shape=args['out_shape'], transform=train_transf, gamma=args['gamma'])
-        valid_data = Trancos(train=True, path=args['data_path'], out_shape=args['out_shape'], transform=valid_transf, gamma=args['gamma'])
+        train_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
+        valid_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
     else:
-        train_data = WebcamT(path=args['data_path'], out_shape=args['out_shape'], transform=train_transf, gamma=args['gamma'])
-        valid_data = WebcamT(path=args['data_path'], out_shape=args['out_shape'], transform=valid_transf, gamma=args['gamma'])
+        train_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
+        valid_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
 
     # split the data into training and validation sets
     if args['valid'] > 0:
