@@ -16,24 +16,30 @@ from utils import show_images, sort_seqs_by_len
 
 def main():
     parser = argparse.ArgumentParser(description='Train FCN-rLSTM in Trancos dataset (sequential version).', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-m', '--model_path', default='./fcn_rlstm.pth', type=str, metavar='', help='model file (output of train)')
+    parser.add_argument('-m', '--model_path', default='./model/fcn_rlstm.pth', type=str, metavar='', help='model file (output of train)')
     parser.add_argument('-d', '--dataset', default='TRANCOS', type=str, metavar='', help='dataset')
-    parser.add_argument('-p', '--data_path', default='/ctm-hdd-pool01/DB/TRANCOS_v3', type=str, metavar='', help='data directory path')
+    parser.add_argument('-p', '--data_path', default='./data/TRANCOS_v3', type=str, metavar='', help='data directory path')
+    
     parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
     parser.add_argument('--lr', default=1e-3, type=float, metavar='', help='learning rate')
     parser.add_argument('--epochs', default=500, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=8, type=int, metavar='', help='batch size')
+    
     parser.add_argument('--size_red', default=4, type=int, metavar='', help='size reduction factor to be applied to the images')
     parser.add_argument('--lambda', default=1e-3, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
+    
     parser.add_argument('--max_len', default=5, type=int, metavar='', help='maximum sequence length')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
+    
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
+    
     parser.add_argument('--use_visdom', default=False, type=int, metavar='', help='use Visdom to visualize plots')
     parser.add_argument('--visdom_env', default='FCN-rLSTM_train', type=str, metavar='', help='Visdom environment name')
     parser.add_argument('--visdom_port', default=8888, type=int, metavar='', help='Visdom port')
     parser.add_argument('--n2show', default=5, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
     parser.add_argument('--vis_shape', nargs=2, default=[120, 160], type=int, metavar='', help='shape of the images shown in Visdom')
+    
     parser.add_argument('--seed', default=42, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
 

@@ -19,20 +19,27 @@ def main():
     parser.add_argument('-m', '--model_path', default='./model/fcn.pth', type=str, metavar='', help='model file (output of train)')
     parser.add_argument('-d', '--dataset', default='TRANCOS', type=str, metavar='', help='dataset')
     parser.add_argument('-p', '--data_path', default='./data/TRANCOS_v3', type=str, metavar='', help='data directory path')
+    
     parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
+    
     parser.add_argument('--lr', default=1e-3, type=float, metavar='', help='learning rate')
     parser.add_argument('--epochs', default=500, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
+    
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
+    
     parser.add_argument('--lambda', default=1e-3, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
+    
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
+    
     parser.add_argument('--use_visdom', default=False, type=int, metavar='', help='use Visdom to visualize plots')
     parser.add_argument('--visdom_env', default='FCN_train', type=str, metavar='', help='Visdom environment name')
     parser.add_argument('--visdom_port', default=8888, type=int, metavar='', help='Visdom port')
     parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
     parser.add_argument('--vis_shape', nargs=2, default=[120, 160], type=int, metavar='', help='shape of the images shown in Visdom')
+    
     parser.add_argument('--seed', default=42, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
 
@@ -65,6 +72,8 @@ def main():
         train_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
         valid_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
 
+    print("train and valid data loaded")
+
     # split the data into training and validation sets
     if args['valid'] > 0:
         valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args['valid'])))  # randomly choose some images for validation
@@ -87,6 +96,7 @@ def main():
 
     # instantiate the model and define an optimizer
     model = FCN_rLSTM(temporal=False).to(device)
+    print("model loaded")
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
 

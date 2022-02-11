@@ -15,17 +15,21 @@ from utils import show_images
 
 def main():
     parser = argparse.ArgumentParser(description='Test FCN in Trancos dataset.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-m', '--model_path', default='./fcn.pth', type=str, metavar='', help='model file (output of train)')
-    parser.add_argument('-d', '--data_path', default='/ctm-hdd-pool01/DB/TRANCOS_v3', type=str, metavar='', help='data directory path')
+    parser.add_argument('-m', '--model_path', default='./model/fcn.pth', type=str, metavar='', help='model file (output of train)')
+    parser.add_argument('-d', '--data_path', default='/data/TRANCOS_v3', type=str, metavar='', help='data directory path')
+    
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
     parser.add_argument('--size_red', default=4, type=int, metavar='', help='size reduction factor to be applied to the images')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='parameter of the Gaussian kernel (inverse of variance)')
+    
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
+    
     parser.add_argument('--use_visdom', default=False, type=int, metavar='', help='use Visdom to visualize plots')
     parser.add_argument('--visdom_env', default='FCN_test', type=str, metavar='', help='Visdom environment name')
     parser.add_argument('--visdom_port', default=8888, type=int, metavar='', help='Visdom port')
     parser.add_argument('--n2show', default=16, type=int, metavar='', help='number of examples to show in Visdom')
     parser.add_argument('--vis_shape', nargs=2, default=[120, 160], type=int, metavar='', help='shape of the images shown in Visdom')
+    
     parser.add_argument('--seed', default=-1, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
 
