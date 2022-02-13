@@ -13,6 +13,16 @@ from datasets import Trancos, WebcamT
 from model import FCN_rLSTM
 from utils import show_images
 
+#####################################
+#   model           : FCN-rLSTM     #
+#   dataset         : Trancos       #
+#   validation      : 0.2           #
+#   train           : 0.8           #
+#   batch_size      : 32            #
+#   epochs          : 100           #
+#   learning_rate   : 0.003         #
+#   output shape    : (120, 160)    #
+#####################################
 
 def main():
     parser = argparse.ArgumentParser(description='Train FCN in Trancos or WebcamT datasets.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -23,7 +33,7 @@ def main():
     parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
     
     parser.add_argument('--lr', default=1e-3, type=float, metavar='', help='learning rate')
-    parser.add_argument('--epochs', default=500, type=int, metavar='', help='number of training epochs')
+    parser.add_argument('--epochs', default=100, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
     
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
@@ -32,11 +42,11 @@ def main():
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
     
-    parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
+    parser.add_argument('--use_cuda', default=False, type=int, metavar='', help='use CUDA capable GPU')
     
-    parser.add_argument('--use_visdom', default=False, type=int, metavar='', help='use Visdom to visualize plots')
+    parser.add_argument('--use_visdom', default=True, type=int, metavar='', help='use Visdom to visualize plots')
     parser.add_argument('--visdom_env', default='FCN_train', type=str, metavar='', help='Visdom environment name')
-    parser.add_argument('--visdom_port', default=8888, type=int, metavar='', help='Visdom port')
+    parser.add_argument('--visdom_port', default=8097, type=int, metavar='', help='Visdom port')
     parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
     parser.add_argument('--vis_shape', nargs=2, default=[120, 160], type=int, metavar='', help='shape of the images shown in Visdom')
     
@@ -44,8 +54,8 @@ def main():
     args = vars(parser.parse_args())
 
     # dump args to a txt file for your records
-    with open(args['model_path'] + '.txt', 'w') as f:
-        f.write(str(args)+'\n')
+    # with open(args['model_path'] + '.txt', 'w') as f:
+    #     f.write(str(args)+'\n')
 
     # use a fixed random seed for reproducibility purposes
     if args['seed'] > 0:
