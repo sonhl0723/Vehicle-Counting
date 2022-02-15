@@ -27,7 +27,7 @@ def density_map(shape, centers, gammas, out_shape=None):
     return D
 
 def show_images(plt, var_name, X, density, count, shape=None):
-    labels = ['img {} count = {} | '.format(i, int(cnti)) for i, cnti in enumerate(count)]
+    # labels = ['img {} count = {} | '.format(i, int(cnti)) for i, cnti in enumerate(count)]
 
     if shape is not None:
         N = X.shape[0]  # N, C, H, W
@@ -47,9 +47,9 @@ def show_images(plt, var_name, X, density, count, shape=None):
     #   plt.plot(var_name + ' highlighted', Xh, labels)
     #   plt.plot(var_name + ' density maps', density, labels)
 
-    ## Tensorboard Version  ## => tensorboard add_image는 4차원이면 Tensor로 변환 필수?
-    plt.img_plot(var_name + ' highlighted', torch.Tensor(Xh), labels)
-    plt.img_plot(var_name + 'density maps', torch.Tensor(density), labels)
+    ## Tensorboard Version  ## => tensorboard add_image는 4차원이면 Tensor로 변환 필수? tensorboard는 이미지 한개만 허용 뭔가 매번 싯팔 학습때마다 돌려야할것 같은 느낌이 드는데 기분 탓이길 바람ㅎㅎ
+    plt.img_plot(var_name + ' highlighted', torch.Tensor(Xh[0]))
+    plt.img_plot(var_name + 'density maps', torch.Tensor(density[0]))
 
 def sort_seqs_by_len(seqs, seq_len):
     sort_idx = torch.argsort(seq_len, dim=0, descending=True)

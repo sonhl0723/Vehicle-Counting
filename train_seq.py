@@ -13,6 +13,8 @@ from datasets import TrancosSeq, WebcamTSeq
 from model import FCN_rLSTM
 from utils import show_images, sort_seqs_by_len
 
+# tensorboard test
+import plotter_tb
 #####################################
 #   model           : FCN-rLSTM     #
 #   dataset         : Trancos       #
@@ -35,29 +37,25 @@ def main():
     parser.add_argument('--epochs', default=100, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
     
-    # parser.add_argument('--size_red', default=4, type=int, metavar='', help='size reduction factor to be applied to the images')
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
 
     parser.add_argument('--lambda', default=1e-3, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
-    
     parser.add_argument('--max_len', default=None, type=int, metavar='', help='maximum sequence length')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
     
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
     
-    parser.add_argument('--use_visdom', default=True, type=int, metavar='', help='use Visdom to visualize plots')
-    parser.add_argument('--visdom_env', default='FCN-rLSTM_train', type=str, metavar='', help='Visdom environment name')
-    parser.add_argument('--visdom_port', default=8097, type=int, metavar='', help='Visdom port')
-    parser.add_argument('--n2show', default=5, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
-    parser.add_argument('--vis_shape', nargs=2, default=[120, 160], type=int, metavar='', help='shape of the images shown in Visdom')
-    
+    #   tensorboard arguments   #
+    parser.add_argument('--use_tensorboard', default=True, type=int, metavar='', help='use TensorBoardX to visualize plots')
+    parser.add_argument('--log_dir', default='./log', help='Save the FCN_train log in this directory')
+    parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
     parser.add_argument('--seed', default=42, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
 
     # dump args to a txt file for your records
-    # with open(args['model_path'] + '.txt', 'w') as f:
-    #     f.write(str(args)+'\n')
+    with open(args['model_path'] + '.txt', 'w') as f:
+        f.write(str(args)+'\n')
 
     # use a fixed random seed for reproducibility purposes
     if args['seed'] > 0:
@@ -106,15 +104,14 @@ def main():
 
     # instantiate the model and define an optimizer
     model = FCN_rLSTM(temporal=True, image_dim=(train_data[0][0].shape[2:])).to(device)
-    print(model)
+    print("model loaded")
+    # print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
 
-    # Visdom is a tool to visualize plots during training
-    if args['use_visdom']:
-        loss_plt = plotter.VisdomLossPlotter(env_name=args['visdom_env'],
-                                             port=args['visdom_port'])
-        img_plt = plotter.VisdomImgsPlotter(env_name=args['visdom_env'],
-                                            port=args['visdom_port'])
+    # Tensorboard is a tool to visualize plots during training
+    if args['use_tensorboard']:
+        tensorboard_plt = plotter_tb.TensorboardPlotter(log_dir=args['log_dir'])
+
 
     # training routine
     for epoch in range(args['epochs']):
@@ -130,7 +127,7 @@ def main():
         t0 = time.time()
         for i, (X, mask, density, count, _, seq_len) in enumerate(train_loader):
             # copy the tensors to GPU (if applicable)
-            X, mask, density, count, seq_len = X.to(device), mask.to(device), density.to(device), count.to(device), seq_len.to(device)
+            X, mask, density, count= X.to(device), mask.to(device), density.to(device), count.to(device)
             # sort the sequences by descending order of the respective lengths (as expected by the model)
             seqs, seq_len = sort_seqs_by_len([X, mask, density, count], seq_len)
             X, mask, density, count = seqs
@@ -175,12 +172,11 @@ def main():
               .format(train_loss, train_density_loss, train_count_loss, train_count_err))
         print('time: {:.0f} seconds'.format(t1-t0))
 
-        if args['use_visdom']:
-            # plot the losses
-            loss_plt.plot('global loss', 'train', 'MSE', epoch, train_loss)
-            loss_plt.plot('density loss', 'train', 'MSE', epoch, train_density_loss)
-            loss_plt.plot('count loss', 'train', 'MSE', epoch, train_count_loss)
-            loss_plt.plot('count error', 'train', 'MAE', epoch, train_count_err)
+        if args['use_tensorboard']:
+            tensorboard_plt.loss_plot('global_loss', 'train', 'MSE', train_loss, epoch)
+            tensorboard_plt.loss_plot('density_loss', 'train', 'MSE', train_density_loss, epoch)
+            tensorboard_plt.loss_plot('count_loss', 'train', 'MSE', train_count_loss, epoch)
+            tensorboard_plt.loss_plot('count_error', 'train', 'MAE', train_count_err, epoch)
 
             # show a few training examples (images + density maps)
             X *= mask  # show the active region only
@@ -190,8 +186,10 @@ def main():
             X, density, count = X.reshape(N*L, C, H, W).cpu().numpy(), density.reshape(N*L, 1, H, W).cpu().numpy(), count.reshape(N*L).cpu().numpy()
             density_pred, count_pred = density_pred.reshape(N*L, 1, H, W).detach().cpu().numpy(), count_pred.reshape(N*L).detach().cpu().numpy()
             n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
-            show_images(img_plt, 'train gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
-            show_images(img_plt, 'train pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
+
+            ## Tensorboard version   ##
+            show_images(tensorboard_plt, 'train gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['img_shape'])
+            show_images(tensorboard_plt, 'train pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['img_shape'])
 
         if valid_loader is None:
             print()
@@ -207,7 +205,7 @@ def main():
         t0 = time.time()
         for i, (X, mask, density, count, _, seq_len) in enumerate(valid_loader):
             # copy the tensors to GPU (if applicable)
-            X, mask, density, count, seq_len = X.to(device), mask.to(device), density.to(device), count.to(device), seq_len.to(device)
+            X, mask, density, count= X.to(device), mask.to(device), density.to(device), count.to(device)
             # sort the sequences by descending order of the respective lengths (as expected by the model)
             seqs, seq_len = sort_seqs_by_len([X, mask, density, count], seq_len)
             X, mask, density, count = seqs
@@ -243,12 +241,11 @@ def main():
         print('time: {:.0f} seconds'.format(t1-t0))
         print()
 
-        if args['use_visdom']:
-            # plot the losses
-            loss_plt.plot('global loss', 'valid', 'MSE', epoch, valid_loss)
-            loss_plt.plot('density loss', 'valid', 'MSE', epoch, valid_density_loss)
-            loss_plt.plot('count loss', 'valid', 'MSE', epoch, valid_count_loss)
-            loss_plt.plot('count error', 'valid', 'MAE', epoch, valid_count_err)
+        if args['use_tensorboard']:
+            tensorboard_plt.loss_plot('global_loss', 'valid', 'MSE', valid_loss, epoch)
+            tensorboard_plt.loss_plot('density_loss', 'valid', 'MSE', valid_density_loss, epoch)
+            tensorboard_plt.loss_plot('count_loss', 'valid', 'MSE', valid_count_loss, epoch)
+            tensorboard_plt.loss_plot('count_error', 'valid', 'MAE', valid_count_err, epoch)
 
             # show a few training examples (images + density maps)
             X *= mask  # show the active region only
@@ -256,10 +253,12 @@ def main():
             density_pred, count_pred = density_pred.transpose(1, 0), count_pred.transpose(1, 0)
             N, L, C, H, W = X.shape
             X, density, count = X.reshape(N*L, C, H, W).cpu().numpy(), density.reshape(N*L, 1, H, W).cpu().numpy(), count.reshape(N*L).cpu().numpy()
-            density_pred, count_pred = density_pred.reshape(N*L, 1, H, W).cpu().numpy(), count_pred.reshape(N*L).cpu().numpy()
+            density_pred, count_pred = density_pred.reshape(N*L, 1, H, W).detach().cpu().numpy(), count_pred.reshape(N*L).detach().cpu().numpy()
             n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
-            show_images(img_plt, 'valid gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
-            show_images(img_plt, 'valid pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
+
+
+            show_images(tensorboard_plt, 'valid gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['img_shape'])
+            show_images(tensorboard_plt, 'valid pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['img_shape'])
 
     torch.save(model.state_dict(), args['model_path'])
 
