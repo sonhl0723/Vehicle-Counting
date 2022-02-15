@@ -181,7 +181,7 @@ def main():
               .format(train_loss, train_density_loss, train_count_loss, train_count_err))
         print('time: {:.0f} seconds'.format(t1-t0))
 
-        if args['use_visdom']:
+        # if args['use_visdom']:
             # plot the losses
 
             #############################################################################
@@ -194,6 +194,7 @@ def main():
             #############################################################################
             #############################################################################
 
+        if args['use_tensorboard']:
             #############################################################################
             ##  Tensorboard Version  ####################################################
             #############################################################################
@@ -263,7 +264,7 @@ def main():
         print('time: {:.0f} seconds'.format(t1-t0))
         print()
 
-        if args['use_visdom']:
+        # if args['use_visdom']:
             # plot the losses
 
             #############################################################################
@@ -276,7 +277,7 @@ def main():
             #############################################################################
             #############################################################################
 
-
+        if args['use_tensorboard']:
             #############################################################################
             ##  Tensorboard Version  ####################################################
             #############################################################################
@@ -301,7 +302,9 @@ def main():
             show_images(tensorboard_plt, 'valid gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
             show_images(tensorboard_plt, 'valid pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
 
-    tensorboard_plt.close()
+    if args['use_tensorboard']:
+        tensorboard_plt.close()
+    
     torch.save(model.state_dict(), args['model_path'])
 
 
