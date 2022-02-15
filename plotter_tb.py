@@ -13,3 +13,6 @@ class TensorboardPlotter(object):
         self.writer.add_image(title.split[' '][0]+'/'+title,
                                 img, 
                                 iter)
+
+    def close(self):
+        self.writer.close()
