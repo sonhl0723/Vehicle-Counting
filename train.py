@@ -13,6 +13,9 @@ from datasets import Trancos, WebcamT
 from model import FCN_rLSTM
 from utils import show_images
 
+# tensorboard test
+import plotter_tb
+
 #####################################
 #   model           : FCN-rLSTM     #
 #   dataset         : Trancos       #
@@ -44,11 +47,15 @@ def main():
     
     parser.add_argument('--use_cuda', default=False, type=int, metavar='', help='use CUDA capable GPU')
     
-    parser.add_argument('--use_visdom', default=True, type=int, metavar='', help='use Visdom to visualize plots')
+    parser.add_argument('--use_visdom', default=False, type=int, metavar='', help='use Visdom to visualize plots')
     parser.add_argument('--visdom_env', default='FCN_train', type=str, metavar='', help='Visdom environment name')
     parser.add_argument('--visdom_port', default=8097, type=int, metavar='', help='Visdom port')
     parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
     parser.add_argument('--vis_shape', nargs=2, default=[120, 160], type=int, metavar='', help='shape of the images shown in Visdom')
+
+    #   tensorboard arguments   #
+    parser.add_argument('--use_tensorboard', default=True, type=int, metavar='', help='use TensorBoardX to visualize plots')
+    parser.add_argument('--log_dir', default='./FCN_train', help='Save the FCN_train log in this directory')
     
     parser.add_argument('--seed', default=42, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
@@ -117,6 +124,9 @@ def main():
         img_plt = plotter.VisdomImgsPlotter(env_name=args['visdom_env'],
                                             port=args['visdom_port'])
 
+    if args['use_tensorboard']:
+        loss_plt = 
+
     # training routine
     for epoch in range(args['epochs']):
         print('Epoch {}/{}'.format(epoch, args['epochs']-1))
@@ -173,10 +183,25 @@ def main():
 
         if args['use_visdom']:
             # plot the losses
-            loss_plt.plot('global loss', 'train', 'MSE', epoch, train_loss)
-            loss_plt.plot('density loss', 'train', 'MSE', epoch, train_density_loss)
-            loss_plt.plot('count loss', 'train', 'MSE', epoch, train_count_loss)
-            loss_plt.plot('count error', 'train', 'MAE', epoch, train_count_err)
+            #############################################################################
+            ##  Visdom Version  #########################################################
+            #############################################################################
+            #   loss_plt.plot('global loss', 'train', 'MSE', epoch, train_loss)         #
+            #   loss_plt.plot('density loss', 'train', 'MSE', epoch, train_density_loss)#
+            #   loss_plt.plot('count loss', 'train', 'MSE', epoch, train_count_loss)    #
+            #   loss_plt.plot('count error', 'train', 'MAE', epoch, train_count_err)    #
+            #############################################################################
+            #############################################################################
+
+            #############################################################################
+            ##  Tensorboard Version  ####################################################
+            #############################################################################
+            writer.add_scalar('loss/train/global', {'MSE' : train_loss}, epoch)
+            writer.add_scalar('loss/train/density', {'MSE' : train_density_loss}, epoch)
+            writer.add_scalar('loss/train/count', {'MSE' : train_count_loss}, epoch)
+            writer.add_scalar('loss/train/count_error', {'MAE' : train_count_err}, epoch)
+            #############################################################################
+            #############################################################################
 
             # show a few training examples (images + density maps)
             X *= mask  # show the active region only
