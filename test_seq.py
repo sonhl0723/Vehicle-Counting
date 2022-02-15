@@ -10,7 +10,7 @@ import np_transforms as NP_T
 from datasets import TrancosSeq
 from model import FCN_rLSTM
 from utils import show_images, sort_seqs_by_len
-import plotter_tb
+import plotter
 
 def main():
     parser = argparse.ArgumentParser(description='Test FCN-rLSTM in Trancos dataset (sequential version).', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -23,7 +23,8 @@ def main():
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
     parser.add_argument('--use_tensorboard', default=True, type=int, metavar='', help='use TensorBoardX to visualize plots')
     parser.add_argument('--log_dir', default='./log/fcn_rlstm_test', help='tensorboard log directory')
-    parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
+    parser.add_argument('--tb_img_shape', default=[120, 160], type=int, metavar='', help='shape of the images to be visualized in TensorBoardX')
+    parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Tensorboard in each epoch')
     parser.add_argument('--seed', default=-1, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
 
@@ -55,11 +56,11 @@ def main():
     # instantiate the model
     model = FCN_rLSTM(temporal=True, image_dim=(test_data[0][0].shape[2:])).to(device)
     model.load_state_dict(torch.load(args['model_path'], map_location=device))
-    print(model)
+    print("model loaded")
 
     # Tensorboard is a tool to visualize plots during training
     if args['use_tensorboard']:
-        tensorboard_plt = plotter_tb.TensorboardPlotter(log_dir=args['log_dir'])
+        tensorboard_plt = plotter.TensorboardPlotter(log_dir=args['log_dir'])
         samples = {'X': [], 'density': [], 'count': [], 'density_pred': [], 'count_pred': []}
         nsaved = 0
 
@@ -122,8 +123,8 @@ def main():
         for key in samples:
             samples[key] = np.concatenate(samples[key], axis=0)
         
-        show_images(tensorboard_plt, 'test gt', samples['X'], samples['density'], samples['count'], shape=args['img_shape'])
-        show_images(tensorboard_plt, 'test pred', samples['X'], samples['density_pred'], samples['count_pred'], shape=args['img_shape'])
+        show_images(tensorboard_plt, 'Ground Truth', 'test', samples['X'], samples['density'], samples['count'], shape=args['tb_img_shape'])
+        show_images(tensorboard_plt, 'Prediction', 'test', samples['X'], samples['density_pred'], samples['count_pred'], shape=args['tb_img_shape'])
         tensorboard_plt.close()
         
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+from calendar import EPOCH
 import numpy as np
 import skimage.transform as SkT
 import torch
@@ -26,9 +27,9 @@ def density_map(shape, centers, gammas, out_shape=None):
         D += gauss2d(shape, (x, y), gammas[i], out_shape=out_shape)
     return D
 
-def show_images(plt, var_name, X, density, count, shape=None):
-    # labels = ['img {} count = {} | '.format(i, int(cnti)) for i, cnti in enumerate(count)]
-
+def show_images(plt, tag, type, X, density, count, shape=None, global_step=0):
+    labels = ['img {} count = {} | '.format(i, int(cnti)) for i, cnti in enumerate(count)]
+    labels_str = '\n'.join(labels)
     if shape is not None:
         N = X.shape[0]  # N, C, H, W
         X, density = X.transpose(2, 3, 0, 1), density.transpose(2, 3, 0, 1)  # H, W, N, C (format expected by skimage)
@@ -43,13 +44,11 @@ def show_images(plt, var_name, X, density, count, shape=None):
     Xh[:, 2, :, :] *= 1 - density
     density = np.tile(density[:, np.newaxis, :, :], (1, 3, 1, 1))
 
-    ##  Visdom Version   ##
-    #   plt.plot(var_name + ' highlighted', Xh, labels)
-    #   plt.plot(var_name + ' density maps', density, labels)
-
     ## Tensorboard Version  ## => tensorboard add_image는 4차원이면 Tensor로 변환 필수? tensorboard는 이미지 한개만 허용 뭔가 매번 싯팔 학습때마다 돌려야할것 같은 느낌이 드는데 기분 탓이길 바람ㅎㅎ
-    plt.img_plot(var_name + ' highlighted', torch.Tensor(Xh[0]))
-    plt.img_plot(var_name + 'density maps', torch.Tensor(density[0]))
+    plt.img_plot(tag + ' Highlighted' + '/' + type, torch.Tensor(Xh), global_step)
+    plt.text_plot(tag + ' Highlighted' + '/' + type, labels_str, global_step)
+    plt.img_plot(tag + ' Density Maps' + '/' + type, torch.Tensor(density), global_step)
+    plt.text_plot(tag + ' Density Maps' + '/' + type, labels_str, global_step)
 
 def sort_seqs_by_len(seqs, seq_len):
     sort_idx = torch.argsort(seq_len, dim=0, descending=True)
