@@ -8,12 +8,9 @@ import torchvision.transforms as T
 from torch.utils.data import DataLoader, Subset
 
 import np_transforms as NP_T
-import plotter
 from datasets import Trancos, WebcamT
 from model import FCN_rLSTM
 from utils import show_images
-
-# tensorboard test
 import plotter_tb
 
 #####################################
@@ -32,25 +29,18 @@ def main():
     parser.add_argument('-m', '--model_path', default='./model/fcn.pth', type=str, metavar='', help='model file (output of train)')
     parser.add_argument('-d', '--dataset', default='TRANCOS', type=str, metavar='', help='dataset')
     parser.add_argument('-p', '--data_path', default='./data/TRANCOS_v3', type=str, metavar='', help='data directory path')
-    
     parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
-    
     parser.add_argument('--lr', default=1e-3, type=float, metavar='', help='learning rate')
-    parser.add_argument('--epochs', default=100, type=int, metavar='', help='number of training epochs')
+    parser.add_argument('--epochs', default=300, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
-    
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
-    
     parser.add_argument('--lambda', default=1e-3, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
-    
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
-    #   tensorboard arguments   #
     parser.add_argument('--use_tensorboard', default=True, type=int, metavar='', help='use TensorBoardX to visualize plots')
-    parser.add_argument('--log_dir', default='./log', help='Save the FCN_train log in this directory')
+    parser.add_argument('--log_dir', default='./log/fcn_train', help='tensorboard log directory')
     parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
-    
     parser.add_argument('--seed', default=42, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
 

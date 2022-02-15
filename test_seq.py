@@ -7,30 +7,23 @@ import torch
 from torch.utils.data import DataLoader
 
 import np_transforms as NP_T
-import plotter
 from datasets import TrancosSeq
 from model import FCN_rLSTM
 from utils import show_images, sort_seqs_by_len
-
+import plotter_tb
 
 def main():
     parser = argparse.ArgumentParser(description='Test FCN-rLSTM in Trancos dataset (sequential version).', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-m', '--model_path', default='./model/fcn_rlstm.pth', type=str, metavar='', help='model file (output of train)')
     parser.add_argument('-d', '--data_path', default='./data/TRANCOS_v3', type=str, metavar='', help='data directory path')
-    
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
-    parser.add_argument('--size_red', default=4, type=int, metavar='', help='size reduction factor to be applied to the images')
+    parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     parser.add_argument('--max_len', default=5, type=int, metavar='', help='maximum sequence length')
-    
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
-    
-    parser.add_argument('--use_visdom', default=False, type=int, metavar='', help='use Visdom to visualize plots')
-    parser.add_argument('--visdom_env', default='FCN-rLSTM_test', type=str, metavar='', help='Visdom environment name')
-    parser.add_argument('--visdom_port', default=8888, type=int, metavar='', help='Visdom port')
-    parser.add_argument('--n2show', default=16, type=int, metavar='', help='number of examples to show in Visdom')
-    parser.add_argument('--vis_shape', nargs=2, default=[120, 160], type=int, metavar='', help='shape of the images shown in Visdom')
-    
+    parser.add_argument('--use_tensorboard', default=True, type=int, metavar='', help='use TensorBoardX to visualize plots')
+    parser.add_argument('--log_dir', default='./log/fcn_rlstm_test', help='tensorboard log directory')
+    parser.add_argument('--n2show', default=8, type=int, metavar='', help='number of examples to show in Visdom in each epoch')
     parser.add_argument('--seed', default=-1, type=int, metavar='', help='random seed')
     args = vars(parser.parse_args())
 
@@ -48,7 +41,7 @@ def main():
     test_data = TrancosSeq(
         train=False,
         path=args['data_path'],
-        size_red=args['size_red'],
+        out_shape=args['img_shape'],
         transform=NP_T.ToTensor(),
         gamma=args['gamma'],
         max_len=args['max_len'])
@@ -64,10 +57,9 @@ def main():
     model.load_state_dict(torch.load(args['model_path'], map_location=device))
     print(model)
 
-    # Visdom is a tool to visualize plots during training
-    if args['use_visdom']:
-        img_plt = plotter.VisdomImgsPlotter(env_name=args['visdom_env'],
-                                            port=args['visdom_port'])
+    # Tensorboard is a tool to visualize plots during training
+    if args['use_tensorboard']:
+        tensorboard_plt = plotter_tb.TensorboardPlotter(log_dir=args['log_dir'])
         samples = {'X': [], 'density': [], 'count': [], 'density_pred': [], 'count_pred': []}
         nsaved = 0
 
@@ -79,7 +71,7 @@ def main():
     t0 = time.time()
     for i, (X, mask, density, count, _, seq_len) in enumerate(test_loader):
         # copy the tensors to GPU (if applicable)
-        X, mask, density, count, seq_len = X.to(device), mask.to(device), density.to(device), count.to(device), seq_len.to(device)
+        X, mask, density, count = X.to(device), mask.to(device), density.to(device), count.to(device)
         # sort the sequences by descending order of the respective lengths (as expected by the model)
         seqs, seq_len = sort_seqs_by_len([X, mask, density, count], seq_len)
         X, mask, density, count = seqs
@@ -95,8 +87,8 @@ def main():
         count_loss += torch.sum((count_pred - count)**2)/2
         count_err += torch.sum(torch.abs(count_pred - count))
 
-        # save a few examples to show in Visdom
-        if args['use_visdom'] and (nsaved < args['n2show']):
+        # save a few examples to show in Tensorboard
+        if args['use_tensorboard'] and (nsaved < args['n2show']):
             X *= mask
             X, mask, density, count = X.transpose(1, 0), mask.transpose(1, 0), density.transpose(1, 0), count.transpose(1, 0)
             density_pred, count_pred = density_pred.transpose(1, 0), count_pred.transpose(1, 0)
@@ -126,12 +118,13 @@ def main():
     print('time: {:.0f} seconds'.format(t1-t0))
 
     # show a few examples
-    if args['use_visdom']:
+    if args['use_tensorboard']:
         for key in samples:
             samples[key] = np.concatenate(samples[key], axis=0)
-
-        show_images(img_plt, 'test gt', samples['X'], samples['density'], samples['count'], shape=args['vis_shape'])
-        show_images(img_plt, 'test pred', samples['X'], samples['density_pred'], samples['count_pred'], shape=args['vis_shape'])
-
+        
+        show_images(tensorboard_plt, 'test gt', samples['X'], samples['density'], samples['count'], shape=args['img_shape'])
+        show_images(tensorboard_plt, 'test pred', samples['X'], samples['density_pred'], samples['count_pred'], shape=args['img_shape'])
+        tensorboard_plt.close()
+        
 if __name__ == '__main__':
     main()
