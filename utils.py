@@ -42,8 +42,14 @@ def show_images(plt, var_name, X, density, count, shape=None):
     Xh[:, 1, :, :] *= 1 - density
     Xh[:, 2, :, :] *= 1 - density
     density = np.tile(density[:, np.newaxis, :, :], (1, 3, 1, 1))
-    plt.plot(var_name + ' highlighted', Xh, labels)
-    plt.plot(var_name + ' density maps', density, labels)
+
+    ##  Visdom Version   ##
+    #   plt.plot(var_name + ' highlighted', Xh, labels)
+    #   plt.plot(var_name + ' density maps', density, labels)
+
+    ## Tensorboard Version  ## => tensorboard add_image는 4차원이면 Tensor로 변환 필수?
+    plt.img_plot(var_name + ' highlighted', torch.Tensor(Xh), labels)
+    plt.img_plot(var_name + 'density maps', torch.Tensor(density), labels)
 
 def sort_seqs_by_len(seqs, seq_len):
     sort_idx = torch.argsort(seq_len, dim=0, descending=True)

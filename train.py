@@ -125,7 +125,7 @@ def main():
                                             port=args['visdom_port'])
 
     if args['use_tensorboard']:
-        loss_plt = 
+        tensorboard_plt = plotter_tb.TensorboardPlotter(log_dir=args['log_dir'])
 
     # training routine
     for epoch in range(args['epochs']):
@@ -183,6 +183,7 @@ def main():
 
         if args['use_visdom']:
             # plot the losses
+
             #############################################################################
             ##  Visdom Version  #########################################################
             #############################################################################
@@ -196,10 +197,10 @@ def main():
             #############################################################################
             ##  Tensorboard Version  ####################################################
             #############################################################################
-            writer.add_scalar('loss/train/global', {'MSE' : train_loss}, epoch)
-            writer.add_scalar('loss/train/density', {'MSE' : train_density_loss}, epoch)
-            writer.add_scalar('loss/train/count', {'MSE' : train_count_loss}, epoch)
-            writer.add_scalar('loss/train/count_error', {'MAE' : train_count_err}, epoch)
+            tensorboard_plt.loss_plot('global_loss', 'train', 'MSE', train_loss, epoch)
+            tensorboard_plt.loss_plot('density_loss', 'train', 'MSE', train_density_loss, epoch)
+            tensorboard_plt.loss_plot('count_loss', 'train', 'MSE', train_count_loss, epoch)
+            tensorboard_plt.loss_plot('count_error', 'train', 'MAE', train_count_err, epoch)
             #############################################################################
             #############################################################################
 
@@ -208,8 +209,14 @@ def main():
             X, density, count = X.cpu().numpy(), density.cpu().numpy(), count.cpu().numpy()
             density_pred, count_pred = density_pred.detach().cpu().numpy(), count_pred.detach().cpu().numpy()
             n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
-            show_images(img_plt, 'train gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
-            show_images(img_plt, 'train pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
+
+            ## Visdom version   ##
+            #   show_images(img_plt, 'train gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
+            #   show_images(img_plt, 'train pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
+
+            ## Tensorboard version   ##
+            show_images(tensorboard_plt, 'train gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
+            show_images(tensorboard_plt, 'train pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
 
         if valid_loader is None:
             print()
@@ -258,18 +265,41 @@ def main():
 
         if args['use_visdom']:
             # plot the losses
-            loss_plt.plot('global loss', 'valid', 'MSE', epoch, valid_loss)
-            loss_plt.plot('density loss', 'valid', 'MSE', epoch, valid_density_loss)
-            loss_plt.plot('count loss', 'valid', 'MSE', epoch, valid_count_loss)
-            loss_plt.plot('count error', 'valid', 'MAE', epoch, valid_count_err)
+
+            #############################################################################
+            ##  Visdom Version  #########################################################
+            #############################################################################
+            #   loss_plt.plot('global loss', 'valid', 'MSE', epoch, valid_loss)         #
+            #   loss_plt.plot('density loss', 'valid', 'MSE', epoch, valid_density_loss)#
+            #   loss_plt.plot('count loss', 'valid', 'MSE', epoch, valid_count_loss)    #
+            #   loss_plt.plot('count error', 'valid', 'MAE', epoch, valid_count_err)    #
+            #############################################################################
+            #############################################################################
+
+
+            #############################################################################
+            ##  Tensorboard Version  ####################################################
+            #############################################################################
+            tensorboard_plt.loss_plot('global_loss', 'valid', 'MSE', valid_loss, epoch)
+            tensorboard_plt.loss_plot('density_loss', 'valid', 'MSE', valid_density_loss, epoch)
+            tensorboard_plt.loss_plot('count_loss', 'valid', 'MSE', valid_count_loss, epoch)
+            tensorboard_plt.loss_plot('count_error', 'valid', 'MAE', valid_count_err, epoch)
+            #############################################################################
+            #############################################################################
 
             # show a few training examples (images + density maps)
             X *= mask  # show the active region only
             X, density, count = X.cpu().numpy(), density.cpu().numpy(), count.cpu().numpy()
             density_pred, count_pred = density_pred.cpu().numpy(), count_pred.cpu().numpy()
             n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
-            show_images(img_plt, 'valid gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
-            show_images(img_plt, 'valid pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
+
+            ## Visdom version   ##
+            #   show_images(img_plt, 'valid gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
+            #   show_images(img_plt, 'valid pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
+
+            ## Tensorboard version   ##
+            show_images(tensorboard_plt, 'valid gt', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['vis_shape'])
+            show_images(tensorboard_plt, 'valid pred', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['vis_shape'])
 
     torch.save(model.state_dict(), args['model_path'])
 
