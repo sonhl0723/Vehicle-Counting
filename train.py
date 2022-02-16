@@ -20,11 +20,11 @@ def main():
     parser.add_argument('-d', '--dataset', default='TRANCOS', type=str, metavar='', help='dataset')
     parser.add_argument('-p', '--data_path', default='./data/TRANCOS_v3', type=str, metavar='', help='data directory path')
     parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
-    parser.add_argument('--lr', default=1e-3, type=float, metavar='', help='learning rate')
+    parser.add_argument('--lr', default=1e-4, type=float, metavar='', help='learning rate')
     parser.add_argument('--epochs', default=301, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
-    parser.add_argument('--lambda', default=1e-3, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
+    parser.add_argument('--lambda', default=1e-2, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
@@ -210,7 +210,7 @@ def main():
         valid_density_loss = sum(density_loss_hist)/len(density_loss_hist)
         valid_count_loss = sum(count_loss_hist)/len(count_loss_hist)
         valid_count_err = sum(count_err_hist)/len(count_err_hist)
-        
+
         if epoch % 30 == 0:
             print('Validation statistics:')
             print('global loss: {:.3f} | density loss: {:.3f} | count loss: {:.3f} | count error: {:.3f}'
