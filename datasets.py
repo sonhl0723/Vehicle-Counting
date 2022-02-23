@@ -1,5 +1,6 @@
 import os
 from tkinter.tix import Tree
+from PIL import Image
 import xml.etree.ElementTree as ET
 
 import matplotlib.gridspec as gridspec
@@ -294,8 +295,9 @@ class WebcamT(Dataset):
 
     def load_example(self, img_f):
         X = io.imread(os.path.join(self.path, img_f))
-        mask_f = os.path.join(img_f.split(os.sep)[0], img_f.split(os.sep)[1])+'-msk.npy'
-        mask = np.load(os.path.join(self.path, mask_f))
+        mask_f = os.path.join(img_f.split(os.sep)[0], img_f.split(os.sep)[1])+'_msk.png'
+        mask = Image.open(os.path.join(self.path, mask_f))
+        mask = np.array(mask)
         mask = mask[:, :, np.newaxis].astype('float32')
         bndboxes = self.bndboxes[img_f]
 
@@ -308,7 +310,7 @@ class WebcamT(Dataset):
 
         # compute the density map
         img_centers = [(int((xmin + xmax)/2.), int((ymin + ymax)/2.)) for xmin, ymin, xmax, ymax in bndboxes]
-        gammas = self.gamma*np.array([[1./np.absolute(xmax - xmin), 1./np.absolute(ymax - ymin)] for xmin, ymin, xmax, ymax in bndboxes])
+        gammas = self.gamma*np.array([[1./np.absolute(xmax - xmin+0.001), 1./np.absolute(ymax - ymin+0.001)] for xmin, ymin, xmax, ymax in bndboxes])
         # gammas = self.gamma*np.ones((len(bndboxes), 2))
         density = density_map(
             (H_orig, W_orig),

@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--ct', default=False, type=bool, metavar='', help='continue training from a previous model')
     parser.add_argument('--epochs', default=501, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
-    parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
+    parser.add_argument('--img_shape', default=[240, 352], type=int, metavar='', help='shape of the input images')
     parser.add_argument('--lambda', default=1e-2, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
@@ -58,14 +58,20 @@ def main():
     valid_transf = NP_T.ToTensor()  # no data augmentation in validation
 
     # instantiate the dataset
+    t0 = time.time()
     if args['dataset'].upper() == 'TRANCOS':
         train_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
+        print("Train data loaded")
         valid_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
+        print("Valid data loaded")
     else:
         train_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
+        print("Train data loaded")
         valid_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
-
-    print("train and valid data loaded")
+        print("Valid data loaded")
+    t1 = time.time()
+    # print data load time (minutes)
+    print('data load time: {:.2f} min'.format((t1 - t0) / 60))
 
     # split the data into training and validation sets
     if args['valid'] > 0:
