@@ -27,7 +27,7 @@ def main():
     parser.add_argument('-p', '--data_path', default='./data/TRANCOS_v3', type=str, metavar='', help='data directory path')
     parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
     parser.add_argument('--lr', default=1e-5, type=float, metavar='', help='learning rate')
-    parser.add_argument('--continue_train', default=False, type=bool, metavar='', help='continue training from a previous model')
+    parser.add_argument('--ct', default=False, type=bool, metavar='', help='continue training from a previous model')
     parser.add_argument('--epochs', default=501, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
@@ -93,7 +93,7 @@ def main():
         valid_loader = None
 
     # instantiate the model and define an optimizer
-    if(args['continue']):
+    if(args['ct']):
         model = torch.load(args['model_path'])
         print("Existing model loaded")
     else:
