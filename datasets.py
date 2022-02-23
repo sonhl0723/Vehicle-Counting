@@ -1,4 +1,5 @@
 import os
+from tkinter.tix import Tree
 import xml.etree.ElementTree as ET
 
 import matplotlib.gridspec as gridspec
@@ -268,7 +269,11 @@ class WebcamT(Dataset):
         # get the coordinates of the bounding boxes of all vehicles in all images
         self.bndboxes = {img_f: [] for img_f in self.image_files}
         for img_f in self.image_files:
-            root = ET.parse(os.path.join(self.path, img_f.replace('.jpg', '.xml'))).getroot()
+            # open an xml file and find '&' and remove it (it is not a valid XML character)
+            xml_file = open(os.path.join(self.path, img_f.replace('.jpg', '.xml')), 'r')
+            xml_str = xml_file.read()
+            xml_str = xml_str.replace('&', '')
+            root = ET.fromstring(xml_str)
             for vehicle in root.iter('vehicle'):
                 xmin = int(vehicle.find('bndbox').find('xmin').text)
                 ymin = int(vehicle.find('bndbox').find('ymin').text)
