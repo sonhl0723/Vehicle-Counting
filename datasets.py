@@ -254,7 +254,11 @@ class WebcamT(Dataset):
         self.cam_ids = {}
         if get_cameras:
             for img_f in self.image_files:
-                self.cam_ids[img_f] = int(img_f[0:img_f.find(os.sep)])
+                if img_f.find('bigbus') == -1:
+                    ids = float(img_f[0:img_f.find(os.sep)])
+                else:
+                    ids = 999
+                self.cam_ids[img_f] = int(ids)
 
             if cameras is not None:
                 # only keep images from the provided cameras
