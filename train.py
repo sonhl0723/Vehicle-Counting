@@ -89,7 +89,7 @@ def main():
 
     # instantiate the model and define an optimizer
     if(args['ct']):
-        model = torch.load(args['model_path'])
+        model = torch.load(args['model_path']).to(device)
         print("Existing model loaded")
     else:
         model = FCN_rLSTM(temporal=False).to(device)
