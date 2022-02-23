@@ -13,6 +13,12 @@ from model import FCN_rLSTM
 from utils import show_images, sort_seqs_by_len
 import plotter
 
+######### WebCamT Train 세팅 #########
+## --model_path : 'fcn-rlstm_wct.pth'
+## --dataset : 'WebCamT'
+## --data_path : './data/WebCamT'
+## log_dir : './log/fcn_rlstm_train_wct'
+#####################################
 
 def main():
     parser = argparse.ArgumentParser(description='Train FCN-rLSTM in Trancos dataset (sequential version).', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -20,8 +26,9 @@ def main():
     parser.add_argument('-d', '--dataset', default='TRANCOS', type=str, metavar='', help='dataset')
     parser.add_argument('-p', '--data_path', default='./data/TRANCOS_v3', type=str, metavar='', help='data directory path')
     parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
-    parser.add_argument('--lr', default=1e-4, type=float, metavar='', help='learning rate')
-    parser.add_argument('--epochs', default=301, type=int, metavar='', help='number of training epochs')
+    parser.add_argument('--lr', default=1e-5, type=float, metavar='', help='learning rate')
+    parser.add_argument('--ct', default=False, type=bool, metavar='', help='continue training from a previous model')
+    parser.add_argument('--epochs', default=501, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
     parser.add_argument('--lambda', default=1e-2, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
@@ -86,8 +93,13 @@ def main():
         valid_loader = None
 
     # instantiate the model and define an optimizer
-    model = FCN_rLSTM(temporal=True, image_dim=(train_data[0][0].shape[2:])).to(device)
-    print("model loaded")
+    if(args['ct']):
+        model = torch.load(args['model_path']).to(device)
+        print("Existing model loaded")
+    else:
+        model = FCN_rLSTM(temporal=True, image_dim=(train_data[0][0].shape[2:])).to(device)
+        print("New model loaded")
+
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
 
     # Tensorboard is a tool to visualize plots during training
