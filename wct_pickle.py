@@ -34,7 +34,7 @@ def mk_bndboxes(path, image_files):
     with gzip.open(path+'/vehicle_pixel_info.pickle', 'wb') as f:
         pickle.dump(bndboxes, f)
 
-def load_example(img_f, bndboxes, out_shape, gammas, path):
+def load_example(img_f, bndboxes, out_shape, gamma, path):
         X = io.imread(os.path.join(path, img_f))
         mask_f = os.path.join(img_f.split(os.sep)[0], img_f.split(os.sep)[1])+'_msk.png'
         mask = Image.open(os.path.join(path, mask_f))
@@ -67,11 +67,10 @@ def load_example(img_f, bndboxes, out_shape, gammas, path):
 def main():
     parser = argparse.ArgumentParser(description='Save WebCamT Dataset to .pickle format', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--path', default='./data/WebCamT', type=str, metavar='', help='WebCamT Dataset path')
-    parser.add_argument('--img_shape', default=[240,352], type=int, metavar='', help='fraction of the training data for validation')
+    parser.add_argument('--img_shape', default=[240,352], type=int, metavar='', help='shape of the input images')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     args = vars(parser.parse_args())
     
-
     image_files = []
     path=args['path']
 
@@ -102,27 +101,29 @@ def main():
     with gzip.open(path+'/vehicle_pixel_info.pickle','rb') as f:
         bndboxes = pickle.load(f)
 
-    # 164~166 => 1.pickle
-    # 170~173 => 2.pickle
-    # 181~253 => 3.pickle
-    # 398~403 => 4.pickle
-    # 410~495 => 5.pickle
-    # 511~551 => 6.pickle
-    # 572~691 => 7.pickle
-    # 846~bigbus => 8.pickle
-    max_flag = ['166/166-20160223-15/000494.jpg', '173/173-20160704-18/000300.jpg', '253/253-20160704-15/000292.jpg',
-                '403/403-20160508-18/000298.jpg', '495/495-20160704-18/000299.jpg', '551/551-20160504-18/000500.jpg',
+    # 폴더 별로 pickle 파일 생성
+    max_flag = ['164/164-20160223-14/000398.jpg', '166/166-20160223-15/000494.jpg',
+                '170/170-20160704-18/000292.jpg', '173/173-20160704-18/000300.jpg',
+                '181/181-20151224-15/000500.jpg', '253/253-20160704-15/000292.jpg',
+                '398/398-20160704-18/000299.jpg', '403/403-20160508-18/000298.jpg',
+                '410/410-20160704-18/000292.jpg', '495/495-20160704-18/000299.jpg',
+                '511/511-20160704-18/000293.jpg', '551/551-20160504-18/000500.jpg',
+                '572/572-20160223-13/000499.jpg', '691/691-20160704-18/000294.jpg',
+                '846/846-20160704-18/000300.jpg', '928/928-20160704-18/000293.jpg',
                 'bigbus/bigbus-551/000115.jpg']
 
     images, masks, densities = [], [], []
     for img_f in image_files:
-        X, mask, density = load_example(img_f, bndboxes[img_f], args['img_shape'], args['gamma'], path)
+        file_name = img_f.split(os.sep)[0]
+        if os.path.isfile(path+'/'+file_name+'.pickle'):
+            continue
+        print(img_f)
+        X, mask, density = load_example(img_f, bndboxes[img_f])
         images.append(X)
         masks.append(mask)
         densities.append(density)
 
         if img_f in max_flag:
-            file_name = str(max_flag.index(img_f)+1)
             with gzip.open(path+'/'+file_name+'.pickle', 'wb') as f:
                 pickle.dump({'images':images, 'masks':masks, 'densities':densities}, f)
             del images, masks, densities
