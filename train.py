@@ -1,4 +1,5 @@
 import argparse
+from pkgutil import get_data
 import random
 import time
 
@@ -12,6 +13,44 @@ from datasets import Trancos, WebcamT
 from model import FCN_rLSTM
 from utils import show_images
 import plotter
+
+def get_data_loaders(args_dataset, args_path, args_shape, train_transform, valid_transform, args_gamma, args_valid, args_batch_size, file_name):
+    t0 = time.time()
+    if args_dataset.upper() == 'TRANCOS':
+        train_data = Trancos(train=True, path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma)
+        print("Train data loaded")
+        valid_data = Trancos(train=True, path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma)
+        print("Valid data loaded")
+    else:
+        train_data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
+        print("Train WebCamT "+ file_name +" data loaded")
+        valid_data = WebcamT(path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, file_name=file_name)
+        print("Valid WebCamT "+ file_name +" data loaded")
+    t1 = time.time()
+    # print data load time (minutes)
+    print('data load time: {:.2f} min'.format((t1 - t0) / 60))
+
+    # split the data into training and validation sets
+    if args_valid > 0:
+        valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args_valid)))  # randomly choose some images for validation
+        valid_data = Subset(valid_data, list(valid_indices))
+        train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
+        train_data = Subset(train_data, list(train_indices))
+    else:
+        valid_data = None
+
+    # create data loaders for training and validation
+    train_loader = DataLoader(train_data,
+                              batch_size=args_batch_size,
+                              shuffle=True)  # shuffle the data at the beginning of each epoch
+    if valid_data:
+        valid_loader = DataLoader(valid_data,
+                                  batch_size=args_batch_size,
+                                  shuffle=False)  # no need to shuffle in validation
+    else:
+        valid_loader = None
+
+    return train_loader, valid_loader
 
 
 def main():
@@ -57,41 +96,51 @@ def main():
     ])
     valid_transf = NP_T.ToTensor()  # no data augmentation in validation
 
-    # instantiate the dataset
-    t0 = time.time()
+    ################################################################################################################
+    # # instantiate the dataset
+    # t0 = time.time()
+    # if args['dataset'].upper() == 'TRANCOS':
+    #     train_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
+    #     print("Train data loaded")
+    #     valid_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
+    #     print("Valid data loaded")
+    # else:
+    #     train_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
+    #     print("Train data loaded")
+    #     valid_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
+    #     print("Valid data loaded")
+    # t1 = time.time()
+    # # print data load time (minutes)
+    # print('data load time: {:.2f} min'.format((t1 - t0) / 60))
+
+    # # split the data into training and validation sets
+    # if args['valid'] > 0:
+    #     valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args['valid'])))  # randomly choose some images for validation
+    #     valid_data = Subset(valid_data, list(valid_indices))
+    #     train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
+    #     train_data = Subset(train_data, list(train_indices))
+    # else:
+    #     valid_data = None
+
+    # # create data loaders for training and validation
+    # train_loader = DataLoader(train_data,
+    #                           batch_size=args['batch_size'],
+    #                           shuffle=True)  # shuffle the data at the beginning of each epoch
+    # if valid_data:
+    #     valid_loader = DataLoader(valid_data,
+    #                               batch_size=args['batch_size'],
+    #                               shuffle=False)  # no need to shuffle in validation
+    # else:
+    #     valid_loader = None
+
     if args['dataset'].upper() == 'TRANCOS':
-        train_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
-        print("Train data loaded")
-        valid_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
-        print("Valid data loaded")
+        # train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['dataset'], args_shape=args['img_shape'],
+        #                                             train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
+        #                                             args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=None)
+        file_list = [None]
     else:
-        train_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
-        print("Train data loaded")
-        valid_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
-        print("Valid data loaded")
-    t1 = time.time()
-    # print data load time (minutes)
-    print('data load time: {:.2f} min'.format((t1 - t0) / 60))
-
-    # split the data into training and validation sets
-    if args['valid'] > 0:
-        valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args['valid'])))  # randomly choose some images for validation
-        valid_data = Subset(valid_data, list(valid_indices))
-        train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
-        train_data = Subset(train_data, list(train_indices))
-    else:
-        valid_data = None
-
-    # create data loaders for training and validation
-    train_loader = DataLoader(train_data,
-                              batch_size=args['batch_size'],
-                              shuffle=True)  # shuffle the data at the beginning of each epoch
-    if valid_data:
-        valid_loader = DataLoader(valid_data,
-                                  batch_size=args['batch_size'],
-                                  shuffle=False)  # no need to shuffle in validation
-    else:
-        valid_loader = None
+        file_list = ['164', '166', '170', '173', '181', '253', '398', '403', '410', '495', '511', '551', '572', '691', '846', '928', 'bigbus']
+    ################################################################################################################
 
     # instantiate the model and define an optimizer
     if(args['ct']):
@@ -123,23 +172,28 @@ def main():
         count_err_hist = []
         X, mask, density, count = None, None, None, None
         t0 = time.time()
-        for i, (X, mask, density, count) in enumerate(train_loader):
-            # copy the tensors to GPU (if applicable)
-            X, mask, density, count = X.to(device), mask.to(device), density.to(device), count.to(device)
+        # WebCamT 폴더 별 train을 위한 테스트
+        for file in file_list:
+            train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
+                                                    train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
+                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file)
+            for i, (X, mask, density, count) in enumerate(train_loader):
+                # copy the tensors to GPU (if applicable)
+                X, mask, density, count = X.to(device), mask.to(device), density.to(device), count.to(device)
 
-            # forward pass through the model
-            density_pred, count_pred = model(X, mask=mask)
+                # forward pass through the model
+                density_pred, count_pred = model(X, mask=mask)
 
-            # compute the loss
-            N = X.shape[0]
-            density_loss = torch.sum((density_pred - density)**2)/(2*N)
-            count_loss = torch.sum((count_pred - count)**2)/(2*N)
-            loss = density_loss + args['lambda']*count_loss
+                # compute the loss
+                N = X.shape[0]
+                density_loss = torch.sum((density_pred - density)**2)/(2*N)
+                count_loss = torch.sum((count_pred - count)**2)/(2*N)
+                loss = density_loss + args['lambda']*count_loss
 
-            # backward pass and optimization step
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                # backward pass and optimization step
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
             if epoch % 30 == 0:
                 print('{}/{} mini-batch loss: {:.3f} | density loss: {:.3f} | count loss: {:.3f}'
