@@ -24,10 +24,8 @@ def get_data_loaders(args_dataset, args_path, args_shape, train_transform, valid
     else:
         train_data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
         print("Train WebCamT "+ file_name +" data loaded")
-        print("Train data : "+str(len(train_data)))
         valid_data = WebcamT(path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, file_name=file_name)
         print("Valid WebCamT "+ file_name +" data loaded")
-        print("Valid data : "+str(len(valid_data)))
     t1 = time.time()
     # print data load time (minutes)
     print('data load time: {:.2f} min'.format((t1 - t0) / 60))
