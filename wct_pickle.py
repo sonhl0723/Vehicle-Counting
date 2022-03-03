@@ -61,7 +61,7 @@ def load_example(img_f, bndboxes, out_shape, gamma, path):
             out_shape=out_shape)
         density = density[:, :, np.newaxis].astype('float32')
 
-        # return X.cpu().numpy(), mask.cpu().numpy(), density
+        # return X.detach().cpu().numpy(), mask.detach().cpu().numpy(), density
         return X, mask, density
 
 def main():
