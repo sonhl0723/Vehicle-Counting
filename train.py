@@ -15,38 +15,50 @@ from utils import show_images
 import plotter
 
 def get_data_loaders(args_dataset, args_path, args_shape, train_transform, valid_transform, args_gamma, args_valid, args_batch_size, file_name):
-    t0 = time.time()
-    if args_dataset.upper() == 'TRANCOS':
-        train_data = Trancos(train=True, path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma)
-        print("Train data loaded")
-        valid_data = Trancos(train=True, path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma)
-        print("Valid data loaded")
-    else:
-        train_data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
-        print("Train WebCamT "+ file_name +" data loaded")
-        valid_data = WebcamT(path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, file_name=file_name)
-        print("Valid WebCamT "+ file_name +" data loaded")
-    t1 = time.time()
-    # print data load time (minutes)
-    print('data load time: {:.2f} min'.format((t1 - t0) / 60))
-
-    # split the data into training and validation sets
     if args_valid > 0:
-        valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args_valid)))  # randomly choose some images for validation
-        valid_data = Subset(valid_data, list(valid_indices))
-        train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
-        train_data = Subset(train_data, list(train_indices))
-    else:
-        valid_data = None
+        if args_dataset.upper() == 'TRANCOS':
+            train_data = Trancos(train=True, path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma)
+            print("Train data loaded")
+            valid_data = Trancos(train=True, path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma)
+            print("Valid data loaded")
 
-    # create data loaders for training and validation
-    train_loader = DataLoader(train_data,
-                              batch_size=args_batch_size,
-                              shuffle=True)  # shuffle the data at the beginning of each epoch
-    if valid_data:
-        valid_loader = DataLoader(valid_data,
+            valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args_valid)))  # randomly choose some images for validation
+            valid_data = Subset(valid_data, list(valid_indices))
+            train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
+            train_data = Subset(train_data, list(train_indices))
+
+            train_loader = DataLoader(train_data,
+                                batch_size=args_batch_size,
+                                shuffle=True)  # shuffle the data at the beginning of each epoch
+
+            valid_loader = DataLoader(valid_data,
                                   batch_size=args_batch_size,
                                   shuffle=False)  # no need to shuffle in validation
+
+            del train_data, valid_data
+
+        else:
+            data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
+
+            valid_indices = set(random.sample(range(len(data)), int(len(data)*args_valid)))  # randomly choose some images for validation
+            train_indices = set(range(len(data))) - valid_indices  # remaining images are for training
+
+            valid_data = Subset(valid_data, list(valid_indices))
+            valid_loader = DataLoader(valid_data,
+                                    batch_size=args_batch_size,
+                                    shuffle=False)  # no need to shuffle in validation
+
+            del data, valid_data
+
+            data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
+
+            train_data = Subset(data, list(train_indices))
+            train_loader = DataLoader(train_data,
+                                    batch_size=args_batch_size,
+                                    shuffle=True)  # shuffle the data at the beginning of each epoch
+
+            del data, train_data
+
     else:
         valid_loader = None
 
@@ -238,6 +250,8 @@ def main():
                 show_images(tensorboard_plt, 'Ground Truth', 'train',X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step = epoch)
                 show_images(tensorboard_plt, 'Prediction', 'train', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step = epoch)
 
+        del train_loader, X, density, count
+
         if valid_loader is None:
             print()
             continue
@@ -305,6 +319,8 @@ def main():
                 n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
                 show_images(tensorboard_plt, 'Ground Truth', 'valid', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
                 show_images(tensorboard_plt, 'Prediction', 'valid', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+
+        del valid_loader, X, density, count
 
     if args['use_tensorboard']:
         tensorboard_plt.close()
