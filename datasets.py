@@ -247,7 +247,8 @@ class WebcamT(Dataset):
         self.file_name = file_name
 
         ################################################################################################################
-        # self.image_files = []
+        self.image_files = []
+        self.bndboxes = {img_f: [] for img_f in data_keys}
         # for cam in os.listdir(self.path):
         #     if not os.path.isdir(os.path.join(self.path, cam)):
         #         continue
@@ -263,10 +264,23 @@ class WebcamT(Dataset):
         with gzip.open(self.path + '/vehicle_pixel_info.pickle', 'rb') as f:
             data = pickle.load(f)
 
-        self.image_files = list(data.keys())
+        data_keys = list(data.keys())
+        data_keys.sort()
+
+        for img in list(data.keys()):
+            if img.split(os.sep) != file_name:
+                if len(self.image_files) != 0:
+                    break
+                else:
+                    continue
+            else:
+                self.image_files.append(img)
+                for element in data[img]:
+                    self.bndboxes[img].append(element)
+
         del data
 
-        self.image_files.sort()
+        self.image_files.sort() # => image_files 랑 bndboxes 가져오기
         ################################################################################################################
 
         self.cam_ids = {}
