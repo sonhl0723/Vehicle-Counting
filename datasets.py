@@ -248,7 +248,6 @@ class WebcamT(Dataset):
 
         ################################################################################################################
         self.image_files = []
-        self.bndboxes = {img_f: [] for img_f in data_keys}
         # for cam in os.listdir(self.path):
         #     if not os.path.isdir(os.path.join(self.path, cam)):
         #         continue
@@ -267,8 +266,10 @@ class WebcamT(Dataset):
         data_keys = list(data.keys())
         data_keys.sort()
 
-        for img in list(data.keys()):
-            if img.split(os.sep) != file_name:
+        self.bndboxes = {img_f: [] for img_f in data_keys}
+
+        for img in data_keys:
+            if img.split(os.sep)[0] != file_name:
                 if len(self.image_files) != 0:
                     break
                 else:
@@ -280,7 +281,7 @@ class WebcamT(Dataset):
 
         del data
 
-        self.image_files.sort() # => image_files 랑 bndboxes 가져오기
+        # self.image_files.sort() # => image_files 랑 bndboxes 가져오기
         ################################################################################################################
 
         self.cam_ids = {}
@@ -318,7 +319,7 @@ class WebcamT(Dataset):
 
         if self.load_all:
             # load all the data into memory
-            # self.images, self.masks, self.densities = [], [], []
+            self.images, self.masks, self.densities = [], [], []
             # for img_f in self.image_files:
             #     X, mask, density = self.load_example(img_f)
             #     self.images.append(X)
@@ -328,34 +329,36 @@ class WebcamT(Dataset):
                 data = pickle.load(f)
             self.images, self.masks, self.densities = data['images'], data['masks'], data['densities']
 
+            del data
+
     ################################################################################################################
-    # def load_example(self, img_f):
-    #     X = io.imread(os.path.join(self.path, img_f))
-    #     mask_f = os.path.join(img_f.split(os.sep)[0], img_f.split(os.sep)[1])+'_msk.png'
-    #     mask = Image.open(os.path.join(self.path, mask_f))
-    #     mask = np.array(mask)
-    #     mask = mask[:, :, np.newaxis].astype('float32')
-    #     bndboxes = self.bndboxes[img_f]
+    def load_example(self, img_f):
+        X = io.imread(os.path.join(self.path, img_f))
+        mask_f = os.path.join(img_f.split(os.sep)[0], img_f.split(os.sep)[1])+'_msk.png'
+        mask = Image.open(os.path.join(self.path, mask_f))
+        mask = np.array(mask)
+        mask = mask[:, :, np.newaxis].astype('float32')
+        bndboxes = self.bndboxes[img_f]
 
-    #     H_orig, W_orig = X.shape[0], X.shape[1]
-    #     # reduce the size of image and mask by the given amount
-    #     H_orig, W_orig = X.shape[0], X.shape[1]
-    #     if H_orig != self.out_shape[0] or W_orig != self.out_shape[1]:
-    #         X = SkT.resize(X, self.out_shape, preserve_range=True).astype('uint8')
-    #         mask = SkT.resize(mask, self.out_shape, preserve_range=True).astype('float32')
+        H_orig, W_orig = X.shape[0], X.shape[1]
+        # reduce the size of image and mask by the given amount
+        H_orig, W_orig = X.shape[0], X.shape[1]
+        if H_orig != self.out_shape[0] or W_orig != self.out_shape[1]:
+            X = SkT.resize(X, self.out_shape, preserve_range=True).astype('uint8')
+            mask = SkT.resize(mask, self.out_shape, preserve_range=True).astype('float32')
 
-    #     # compute the density map
-    #     img_centers = [(int((xmin + xmax)/2.), int((ymin + ymax)/2.)) for xmin, ymin, xmax, ymax in bndboxes]
-    #     gammas = self.gamma*np.array([[1./np.absolute(xmax - xmin+0.001), 1./np.absolute(ymax - ymin+0.001)] for xmin, ymin, xmax, ymax in bndboxes])
-    #     # gammas = self.gamma*np.ones((len(bndboxes), 2))
-    #     density = density_map(
-    #         (H_orig, W_orig),
-    #         img_centers,
-    #         gammas,
-    #         out_shape=self.out_shape)
-    #     density = density[:, :, np.newaxis].astype('float32')
+        # compute the density map
+        img_centers = [(int((xmin + xmax)/2.), int((ymin + ymax)/2.)) for xmin, ymin, xmax, ymax in bndboxes]
+        gammas = self.gamma*np.array([[1./np.absolute(xmax - xmin+0.001), 1./np.absolute(ymax - ymin+0.001)] for xmin, ymin, xmax, ymax in bndboxes])
+        # gammas = self.gamma*np.ones((len(bndboxes), 2))
+        density = density_map(
+            (H_orig, W_orig),
+            img_centers,
+            gammas,
+            out_shape=self.out_shape)
+        density = density[:, :, np.newaxis].astype('float32')
 
-    #     return X, mask, density
+        return X, mask, density
     ################################################################################################################
 
     def __len__(self):

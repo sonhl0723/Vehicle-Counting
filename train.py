@@ -24,8 +24,10 @@ def get_data_loaders(args_dataset, args_path, args_shape, train_transform, valid
     else:
         train_data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
         print("Train WebCamT "+ file_name +" data loaded")
+        print("Train data : "+str(len(train_data)))
         valid_data = WebcamT(path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, file_name=file_name)
         print("Valid WebCamT "+ file_name +" data loaded")
+        print("Valid data : "+str(len(valid_data)))
     t1 = time.time()
     # print data load time (minutes)
     print('data load time: {:.2f} min'.format((t1 - t0) / 60))
@@ -173,10 +175,11 @@ def main():
         X, mask, density, count = None, None, None, None
         t0 = time.time()
         # WebCamT 폴더 별 train을 위한 테스트
-        for file in file_list:
+        for file_elem in file_list:
             train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
                                                     train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
-                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file)
+                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem)
+
             for i, (X, mask, density, count) in enumerate(train_loader):
                 # copy the tensors to GPU (if applicable)
                 X, mask, density, count = X.to(device), mask.to(device), density.to(device), count.to(device)
