@@ -269,7 +269,9 @@ class WebcamT(Dataset):
         self.bndboxes = {img_f: [] for img_f in data_keys}
 
         for img in data_keys:
-            if img.split(os.sep)[0] != file_name:
+            if self.file_name.find('_') != -1: fn = self.file_name[:self.file_name.find('_')]
+
+            if img.split(os.sep)[0] != fn:
                 if len(self.image_files) != 0:
                     break
                 else:
@@ -327,7 +329,7 @@ class WebcamT(Dataset):
             #     self.densities.append(density)
             with gzip.open(self.path + '/' + self.file_name + '.pickle', 'rb') as f:
                 data = pickle.load(f)
-                
+
             self.images, self.densities = data['images'], data['densities']
             for mask in data['masks']:
               self.masks.append(np.squeeze(mask, axis=2))

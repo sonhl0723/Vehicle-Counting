@@ -192,6 +192,8 @@ def main():
                                                     train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
                                                     args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem)
 
+            print("WebCamT "+file_elem+" data loaded")
+
             for i, (X, mask, density, count) in enumerate(train_loader):
                 # copy the tensors to GPU (if applicable)
                 X, mask, density, count = X.to(device), mask.to(device), density.to(device), count.to(device)
