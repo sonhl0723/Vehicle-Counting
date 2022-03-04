@@ -346,7 +346,10 @@ class WebcamT(Dataset):
             if self.file_name.split('_')[1].split('.')[0] == '1':
                 self.image_files = self.image_files[:half]
             else:
-                self.image_files = self.image_files[half-1:]
+                if self.file_name.split('_')[0] in ['170', '253', '398', '691']:
+                    self.image_files = self.image_files[half-1:]
+                else:
+                    self.image_files = self.image_files[half:]
 
     ################################################################################################################
     # def load_example(self, img_f):
