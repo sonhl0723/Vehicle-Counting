@@ -266,10 +266,15 @@ class WebcamT(Dataset):
         data_keys = list(data.keys())
         data_keys.sort()
 
+        sep_flag = self.file_name.find('_')
+
         self.bndboxes = {img_f: [] for img_f in data_keys}
 
         for img in data_keys:
-            if self.file_name.find('_') != -1: fn = self.file_name[:self.file_name.find('_')]
+            if sep_flag != -1:
+                fn = self.file_name[:sep_flag]
+            else:
+                fn = self.file_name
 
             if img.split(os.sep)[0] != fn:
                 if len(self.image_files) != 0:
@@ -335,6 +340,13 @@ class WebcamT(Dataset):
               self.masks.append(np.squeeze(mask, axis=2))
 
             del data
+
+        if sep_flag != -1:
+            half = int(len(self.images))
+            if self.file_name.split('_')[1].split('.')[0] == '1':
+                self.image_files = self.image_files[:half]
+            else:
+                self.image_files = self.image_files[half-1:]
 
     ################################################################################################################
     # def load_example(self, img_f):
