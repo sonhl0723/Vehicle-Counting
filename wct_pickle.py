@@ -111,6 +111,7 @@ def main():
                 '572/572-20160223-13/000499.jpg', '691/691-20160704-18/000294.jpg',
                 '846/846-20160704-18/000300.jpg', '928/928-20160704-18/000293.jpg',
                 'bigbus/bigbus-551/000115.jpg']
+    subset_flag = ['170', '173', '253', '398', '403', '410', '495', '511', '551', '572', '691', '846']
 
     images, masks, densities = [], [], []
     for img_f in image_files:
@@ -124,7 +125,15 @@ def main():
         densities.append(density)
 
         if img_f in max_flag:
-            with gzip.open(path+'/'+file_name+'.pickle', 'wb') as f:
-                pickle.dump({'images':images, 'masks':masks, 'densities':densities}, f)
+            if img_f.split(os.sep)[0] in subset_flag:
+                half = int(len(images)/2)
+                with gzip.open(path+'/'+file_name+'_1.pickle', 'wb') as f:
+                    pickle.dump({'images':images[:half], 'masks':masks[:half], 'densities':densities[:half]}, f)
+                with gzip.open(path+'/'+file_name+'_2.pickle', 'wb') as f:
+                    pickle.dump({'images':images[half:], 'masks':masks[half:], 'densities':densities[half:]}, f)
+            else:
+                with gzip.open(path+'/'+file_name+'.pickle', 'wb') as f:
+                    pickle.dump({'images':images, 'masks':masks, 'densities':densities}, f)
+
             del images, masks, densities
             images, masks, densities = [], [], []

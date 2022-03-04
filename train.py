@@ -43,7 +43,7 @@ def get_data_loaders(args_dataset, args_path, args_shape, train_transform, valid
             valid_indices = set(random.sample(range(len(data)), int(len(data)*args_valid)))  # randomly choose some images for validation
             train_indices = set(range(len(data))) - valid_indices  # remaining images are for training
 
-            valid_data = Subset(valid_data, list(valid_indices))
+            valid_data = Subset(data, list(valid_indices))
             valid_loader = DataLoader(valid_data,
                                     batch_size=args_batch_size,
                                     shuffle=False)  # no need to shuffle in validation
@@ -151,7 +151,9 @@ def main():
         #                                             args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=None)
         file_list = [None]
     else:
-        file_list = ['164', '166', '170', '173', '181', '253', '398', '403', '410', '495', '511', '551', '572', '691', '846', '928', 'bigbus']
+        file_list = ['164', '166', '170_1', '170_2', '173_1', '173_2', '181', '253_1', '253_2', '398_1', '398_2',
+                    '403_1', '403_2', '410_1', '410_2', '495_1', '495_2', '511_1', '511_2', '551_1', '551_2',
+                    '572_1', '572_2', '691_1', '691_2', '846_1', '846_2', '928', 'bigbus']
     ################################################################################################################
 
     # instantiate the model and define an optimizer
