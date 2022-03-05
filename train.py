@@ -149,7 +149,7 @@ def main():
         # train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['dataset'], args_shape=args['img_shape'],
         #                                             train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
         #                                             args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=None)
-        file_list = [None]
+        file_list = ['TRANCOS']
     else:
         file_list = ['164', '166', '170_1', '170_2', '173_1', '173_2', '181', '253_1', '253_2', '398_1', '398_2',
                     '403_1', '403_2', '410_1', '410_2', '495_1', '495_2', '511_1', '511_2', '551_1', '551_2',
@@ -191,8 +191,8 @@ def main():
             train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
                                                     train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
                                                     args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem)
-
-            print("WebCamT "+file_elem+" data loaded")
+            if not args['dataset'].upper() == 'TRANCOS':
+                print("WebCamT "+file_elem+" data loaded")
 
             for i, (X, mask, density, count) in enumerate(train_loader):
                 # copy the tensors to GPU (if applicable)
