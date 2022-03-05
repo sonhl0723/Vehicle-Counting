@@ -272,7 +272,7 @@ class WebcamT(Dataset):
 
         for img in data_keys:
             if sep_flag != -1:
-                fn = self.file_name[:sep_flag]
+                fn = self.file_name.split('_')[0]
             else:
                 fn = self.file_name
 
@@ -346,7 +346,7 @@ class WebcamT(Dataset):
             if self.file_name.split('_')[1].split('.')[0] == '1':
                 self.image_files = self.image_files[:half]
             else:
-                if self.file_name.split('_')[0] in ['170', '253', '398', '691']:
+                if not self.file_name.split('_')[0] in ['170', '253', '398', '691']:
                     self.image_files = self.image_files[half-1:]
                 else:
                     self.image_files = self.image_files[half:]

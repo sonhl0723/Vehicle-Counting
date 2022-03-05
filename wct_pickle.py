@@ -95,7 +95,7 @@ def main():
 
     image_files.sort()
 
-    ## vehicle_pixel_info.pickle이 없을 경우 생성
+    # vehicle_pixel_info.pickle이 없을 경우 생성
     if not os.path.isfile(path+'/vehicle_pixel_info.pickle'):
         mk_bndboxes(path, image_files)
     with gzip.open(path+'/vehicle_pixel_info.pickle','rb') as f:
@@ -119,7 +119,7 @@ def main():
         if os.path.isfile(path+'/'+file_name+'.pickle'):
             continue
         print(img_f)
-        X, mask, density = load_example(img_f, bndboxes[img_f])
+        X, mask, density = load_example(img_f=img_f, bndboxes=bndboxes[img_f], out_shape=args['img_shape'], gamma=args['gamma'], path=path)
         images.append(X)
         masks.append(mask)
         densities.append(density)
@@ -137,3 +137,6 @@ def main():
 
             del images, masks, densities
             images, masks, densities = [], [], []
+
+if __name__ == '__main__':
+    main()
