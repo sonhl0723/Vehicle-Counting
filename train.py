@@ -108,47 +108,10 @@ def main():
     ])
     valid_transf = NP_T.ToTensor()  # no data augmentation in validation
 
-    ################################################################################################################
-    # # instantiate the dataset
-    # t0 = time.time()
-    # if args['dataset'].upper() == 'TRANCOS':
-    #     train_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
-    #     print("Train data loaded")
-    #     valid_data = Trancos(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
-    #     print("Valid data loaded")
-    # else:
-    #     train_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'])
-    #     print("Train data loaded")
-    #     valid_data = WebcamT(path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'])
-    #     print("Valid data loaded")
-    # t1 = time.time()
-    # # print data load time (minutes)
-    # print('data load time: {:.2f} min'.format((t1 - t0) / 60))
-
-    # # split the data into training and validation sets
-    # if args['valid'] > 0:
-    #     valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args['valid'])))  # randomly choose some images for validation
-    #     valid_data = Subset(valid_data, list(valid_indices))
-    #     train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
-    #     train_data = Subset(train_data, list(train_indices))
-    # else:
-    #     valid_data = None
-
-    # # create data loaders for training and validation
-    # train_loader = DataLoader(train_data,
-    #                           batch_size=args['batch_size'],
-    #                           shuffle=True)  # shuffle the data at the beginning of each epoch
-    # if valid_data:
-    #     valid_loader = DataLoader(valid_data,
-    #                               batch_size=args['batch_size'],
-    #                               shuffle=False)  # no need to shuffle in validation
-    # else:
-    #     valid_loader = None
-
     if args['dataset'].upper() == 'TRANCOS':
-        # train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['dataset'], args_shape=args['img_shape'],
-        #                                             train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
-        #                                             args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=None)
+        train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
+                                                    train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
+                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=None)
         file_list = ['TRANCOS']
     else:
         file_list = ['164', '166', '170_1', '170_2', '173_1', '173_2', '181', '253_1', '253_2', '398_1', '398_2',
@@ -165,6 +128,8 @@ def main():
         print("New model loaded")
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
+
+    # early_stopping object의 초기화
 
     # Tensorboard is a tool to visualize plots during training
     if args['use_tensorboard']:
@@ -186,12 +151,12 @@ def main():
         count_err_hist = []
         X, mask, density, count = None, None, None, None
         t0 = time.time()
-        # WebCamT 폴더 별 train을 위한 테스트
+        
         for file_elem in file_list:
-            train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
-                                                    train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
-                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem)
             if not args['dataset'].upper() == 'TRANCOS':
+                train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
+                                                        train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
+                                                        args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem)
                 print("WebCamT "+file_elem+" data loaded")
 
             for i, (X, mask, density, count) in enumerate(train_loader):
@@ -212,7 +177,7 @@ def main():
                 loss.backward()
                 optimizer.step()
 
-            if epoch % 30 == 0:
+            if args['dataset'].upper() != 'TRANCOS' or epoch % 30 == 0:
                 print('{}/{} mini-batch loss: {:.3f} | density loss: {:.3f} | count loss: {:.3f}'
                     .format(i, len(train_loader)-1, loss.item(), density_loss.item(), count_loss.item()),
                     flush=True, end='\r')
@@ -254,7 +219,8 @@ def main():
                 show_images(tensorboard_plt, 'Ground Truth', 'train',X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step = epoch)
                 show_images(tensorboard_plt, 'Prediction', 'train', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step = epoch)
 
-        del train_loader, X, density, count
+        if not args['dataset'].upper() == 'TRANCOS':
+            del train_loader, X, density, count
 
         if valid_loader is None:
             print()
@@ -296,7 +262,7 @@ def main():
         valid_count_loss = sum(count_loss_hist)/len(count_loss_hist)
         valid_count_err = sum(count_err_hist)/len(count_err_hist)
 
-        if epoch % 30 == 0:
+        if args['dataset'].upper() != 'TRANCOS' or epoch % 30 == 0:
             print('Validation statistics:')
             print('global loss: {:.3f} | density loss: {:.3f} | count loss: {:.3f} | count error: {:.3f}'
                 .format(valid_loss, valid_density_loss, valid_count_loss, valid_count_err))
@@ -315,16 +281,26 @@ def main():
             tensorboard_plt.overlap_plot('Density Loss',{'train':train_density_loss,'valid':valid_density_loss}, epoch)
             tensorboard_plt.overlap_plot('Count Loss',{'train':train_count_loss,'valid':valid_count_loss}, epoch)
             tensorboard_plt.overlap_plot('Count Error',{'train':train_count_err,'valid':valid_count_err}, epoch)
-            if epoch % 50 == 0:
-            # show a few training examples (images + density maps)
+
+            if args['dataset'].upper() == 'TRANCOS' and epoch & 50 == 0:
+                # show a few training examples (images + density maps)
                 X *= mask  # show the active region only
                 X, density, count = X.cpu().numpy(), density.cpu().numpy(), count.cpu().numpy()
                 density_pred, count_pred = density_pred.cpu().numpy(), count_pred.cpu().numpy()
                 n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
                 show_images(tensorboard_plt, 'Ground Truth', 'valid', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
                 show_images(tensorboard_plt, 'Prediction', 'valid', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            elif args['dataset'].upper() != 'TRANCOS':
+                X *= mask  # show the active region only
+                X, density, count = X.cpu().numpy(), density.cpu().numpy(), count.cpu().numpy()
+                density_pred, count_pred = density_pred.cpu().numpy(), count_pred.cpu().numpy()
+                n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
+                show_images(tensorboard_plt, 'Ground Truth', 'valid', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+                show_images(tensorboard_plt, 'Prediction', 'valid', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            
 
-        del valid_loader, X, density, count
+        if not args['dataset'].upper() == 'TRANCOS':
+            del valid_loader, X, density, count
 
     if args['use_tensorboard']:
         tensorboard_plt.close()

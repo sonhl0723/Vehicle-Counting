@@ -13,13 +13,6 @@ from model import FCN_rLSTM
 from utils import show_images, sort_seqs_by_len
 import plotter
 
-######### WebCamT Train 세팅 #########
-## --model_path : 'fcn-rlstm_wct.pth'
-## --dataset : 'WebCamT'
-## --data_path : './data/WebCamT'
-## log_dir : './log/fcn_rlstm_train_wct'
-#####################################
-
 def get_data_loaders(args_dataset, args_path, args_shape, train_transform, valid_transform, args_gamma, args_valid, args_batch_size, file_name, args_max_len):
     if args_valid > 0:
         if args_dataset.upper() == 'TRANCOS':
@@ -114,37 +107,10 @@ def main():
     ])
     valid_transf = NP_T.ToTensor()  # no data augmentation in validation
 
-    ################################################################################################################
-    # # instantiate the dataset
-    # if args['dataset'].upper() == 'TRANCOS':
-    #     train_data = TrancosSeq(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'], max_len=args['max_len'])
-    #     valid_data = TrancosSeq(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'], max_len=args['max_len'])
-    # else:
-    #     train_data = WebcamTSeq(path=args['data_path'], transform=train_transf, gamma=args['gamma'], max_len=args['max_len'], load_all=True)
-    #     valid_data = WebcamTSeq(path=args['data_path'], transform=valid_transf, gamma=args['gamma'], max_len=args['max_len'], load_all=True)
-
-    # # split the data into training and validation sets
-    # if args['valid'] > 0:
-    #     valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args['valid'])))  # randomly choose some images for validation
-    #     valid_data = Subset(valid_data, list(valid_indices))
-    #     train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
-    #     train_data = Subset(train_data, list(train_indices))
-    # else:
-    #     valid_data = None
-
-    # # create data loaders for training and validation
-    # train_loader = DataLoader(train_data,
-    #                           batch_size=args['batch_size'],
-    #                           shuffle=True)  # shuffle the data at the beginning of each epoch
-    # if valid_data:
-    #     valid_loader = DataLoader(valid_data,
-    #                               batch_size=args['batch_size'],
-    #                               shuffle=False)  # no need to shuffle in validation
-    # else:
-    #     valid_loader = None
-    ################################################################################################################
-
     if args['dataset'].upper() == 'TRANCOS':
+        train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
+                                                    train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
+                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=None, args_max_len=args['max_len'])
         file_list = ['TRANCOS']
     else:
         file_list = ['164', '166', '170_1', '170_2', '173_1', '173_2', '181', '253_1', '253_2', '398_1', '398_2',
@@ -184,10 +150,10 @@ def main():
         t0 = time.time()
 
         for file_elem in file_list:
-            train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
-                                                    train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
-                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem, args_max_len=args['max_len'])
             if not args['dataset'].upper() == 'TRANCOS':
+                train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
+                                                        train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
+                                                        args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem, args_max_len=args['max_len'])
                 print("WebCamT "+file_elem+" data loaded")
 
             for i, (X, mask, density, count, _, seq_len) in enumerate(train_loader):
@@ -258,7 +224,8 @@ def main():
                 show_images(tensorboard_plt, 'Ground Truth', 'train', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
                 show_images(tensorboard_plt, 'Prediction', 'train', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
 
-        del train_loader, X, density, count
+        if not args['dataset'].upper() == 'TRANCOS':
+            del train_loader, X, density, count
         
         if valid_loader is None:
             print()
@@ -335,7 +302,8 @@ def main():
                 show_images(tensorboard_plt, 'Ground Truth', 'valid', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
                 show_images(tensorboard_plt, 'Prediction', 'valid', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
 
-        del valid_loader, X, density, count
+        if not args['dataset'].upper() == 'TRANCOS':
+            del valid_loader, X, density, count
 
     if args['use_tensorboard']:
         tensorboard_plt.close()
