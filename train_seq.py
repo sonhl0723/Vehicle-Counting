@@ -13,53 +13,37 @@ from model import FCN_rLSTM
 from utils import show_images, sort_seqs_by_len
 import plotter
 
-def get_data_loaders(args_dataset, args_path, args_shape, train_transform, valid_transform, args_gamma, args_valid, args_batch_size, file_name, args_max_len):
+def get_data_loaders(args_path, args_shape, train_transform, valid_transform, args_gamma, args_valid, args_batch_size, file_name, args_max_len):
     if args_valid > 0:
-        if args_dataset.upper() == 'TRANCOS':
-            train_data = TrancosSeq(train=True, path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, max_len=args_max_len)
-            print("Train data loaded")
-            valid_data = TrancosSeq(train=True, path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, max_len=args_max_len)
-            print("Valid data loaded")
+        data = WebcamTSeq(path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, max_len=args_max_len, file_name=file_name)
 
-            valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args_valid)))  # randomly choose some images for validation
-            valid_data = Subset(valid_data, list(valid_indices))
-            train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
-            train_data = Subset(train_data, list(train_indices))
+        valid_indices = set(random.sample(range(len(data)), int(len(data)*args_valid)))  # randomly choose some images for validation
+        train_indices = set(range(len(data))) - valid_indices  # remaining images are for training
 
-            train_loader = DataLoader(train_data,
+        valid_data = Subset(data, list(valid_indices))
+        valid_loader = DataLoader(valid_data,
+                                batch_size=args_batch_size,
+                                shuffle=False)  # no need to shuffle in validation
+
+        del data, valid_data
+
+        data = WebcamTSeq(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, max_len=args_max_len, file_name=file_name)
+
+        train_data = Subset(data, list(train_indices))
+        train_loader = DataLoader(train_data,
                                 batch_size=args_batch_size,
                                 shuffle=True)  # shuffle the data at the beginning of each epoch
 
-            valid_loader = DataLoader(valid_data,
-                                  batch_size=args_batch_size,
-                                  shuffle=False)  # no need to shuffle in validation
-
-            del train_data, valid_data
-
-        else:
-            data = WebcamTSeq(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, max_len=args_max_len, file_name=file_name)
-
-            valid_indices = set(random.sample(range(len(data)), int(len(data)*args_valid)))  # randomly choose some images for validation
-            train_indices = set(range(len(data))) - valid_indices  # remaining images are for training
-
-            valid_data = Subset(data, list(valid_indices))
-            valid_loader = DataLoader(valid_data,
-                                    batch_size=args_batch_size,
-                                    shuffle=False)  # no need to shuffle in validation
-
-            del data, valid_data
-
-            data = WebcamTSeq(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, max_len=args_max_len, file_name=file_name)
-
-            train_data = Subset(data, list(train_indices))
-            train_loader = DataLoader(train_data,
-                                    batch_size=args_batch_size,
-                                    shuffle=True)  # shuffle the data at the beginning of each epoch
-
-            del data, train_data
-
+        del data, train_data
     else:
-        valid_loader = None
+        train_data = WebcamTSeq(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, max_len=args_max_len, file_name=file_name)
+        train_loader = DataLoader(train_data,
+                                batch_size=args_batch_size,
+                                shuffle=True)  # shuffle the data at the beginning of each epoch
+
+        del train_data
+
+    valid_loader = None
 
     return train_loader, valid_loader
 
@@ -76,7 +60,7 @@ def main():
     parser.add_argument('--img_shape', default=[240, 352], type=int, metavar='', help='shape of the input images')
     parser.add_argument('--lambda', default=1e-2, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
-    parser.add_argument('--max_len', default=None, type=int, metavar='', help='maximum sequence length')
+    parser.add_argument('--max_len', default=5, type=int, metavar='', help='maximum sequence length')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
     parser.add_argument('--use_cuda', default=True, type=int, metavar='', help='use CUDA capable GPU')
     parser.add_argument('--use_tensorboard', default=True, type=int, metavar='', help='use TensorBoardX to visualize plots')
@@ -108,9 +92,28 @@ def main():
     valid_transf = NP_T.ToTensor()  # no data augmentation in validation
 
     if args['dataset'].upper() == 'TRANCOS':
-        train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
-                                                    train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
-                                                    args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=None, args_max_len=args['max_len'])
+        train_data = TrancosSeq(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=train_transf, gamma=args['gamma'], max_len=args['max_len'])
+        valid_data = TrancosSeq(train=True, path=args['data_path'], out_shape=args['img_shape'], transform=valid_transf, gamma=args['gamma'], max_len=args['max_len'])
+
+        if args['valid'] > 0:
+            valid_indices = set(random.sample(range(len(train_data)), int(len(train_data)*args['valid'])))  # randomly choose some images for validation
+            valid_data = Subset(valid_data, list(valid_indices))
+            train_indices = set(range(len(train_data))) - valid_indices  # remaining images are for training
+            train_data = Subset(train_data, list(train_indices))
+        else:
+            valid_data = None
+
+        # create data loaders for training and validation
+        train_loader = DataLoader(train_data,
+                                batch_size=args['batch_size'],
+                                shuffle=True)  # shuffle the data at the beginning of each epoch
+        if valid_data:
+            valid_loader = DataLoader(valid_data,
+                                    batch_size=args['batch_size'],
+                                    shuffle=False)  # no need to shuffle in validation
+        else:
+            valid_loader = None
+
         file_list = ['TRANCOS']
     else:
         file_list = ['164', '166', '170_1', '170_2', '173_1', '173_2', '181', '253_1', '253_2', '398_1', '398_2',
@@ -122,7 +125,7 @@ def main():
         model = torch.load(args['model_path']).to(device)
         print("Existing model loaded")
     else:
-        model = FCN_rLSTM(temporal=True, image_dim=args['img_shape']).to(device)
+        model = FCN_rLSTM(temporal=True, image_dim=(torch.zeros(args['img_shape'], dtype=torch.int32).shape)).to(device)
         print("New model loaded")
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
@@ -150,10 +153,10 @@ def main():
         t0 = time.time()
 
         for file_elem in file_list:
-            if not args['dataset'].upper() == 'TRANCOS':
-                train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
-                                                        train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
-                                                        args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem, args_max_len=args['max_len'])
+            if args['dataset'].upper() != 'TRANCOS':
+                train_loader, valid_loader = get_data_loaders(args_path=args['data_path'], args_shape=args['img_shape'], train_transform=train_transf,
+                                                        valid_transform=valid_transf, args_gamma=args['gamma'], args_valid=args['valid'],
+                                                        args_batch_size=args['batch_size'], file_name=file_elem, args_max_len=args['max_len'])
                 print("WebCamT "+file_elem+" data loaded")
 
             for i, (X, mask, density, count, _, seq_len) in enumerate(train_loader):
@@ -179,18 +182,18 @@ def main():
                 loss.backward()
                 optimizer.step()
 
-            if epoch % 30 == 0:
-                print('{}/{} mini-batch loss: {:.3f} | density loss: {:.3f} | count loss: {:.3f}'
-                    .format(i, len(train_loader)-1, loss.item(), density_loss.item(), count_loss.item()),
-                    flush=True, end='\r')
+                if epoch % 30 == 0:
+                    print('{}/{} mini-batch loss: {:.3f} | density loss: {:.3f} | count loss: {:.3f}'
+                        .format(i, len(train_loader)-1, loss.item(), density_loss.item(), count_loss.item()),
+                        flush=True, end='\r')
 
-            # save the loss values
-            loss_hist.append(loss.item())
-            density_loss_hist.append(density_loss.item())
-            count_loss_hist.append(count_loss.item())
-            with torch.no_grad():  # evaluation metric, so no need to compute gradients
-                count_err = torch.sum(torch.abs(count_pred - count))/N
-            count_err_hist.append(count_err.item())
+                # save the loss values
+                loss_hist.append(loss.item())
+                density_loss_hist.append(density_loss.item())
+                count_loss_hist.append(count_loss.item())
+                with torch.no_grad():  # evaluation metric, so no need to compute gradients
+                    count_err = torch.sum(torch.abs(count_pred - count))/N
+                count_err_hist.append(count_err.item())
         t1 = time.time()
         print()
 

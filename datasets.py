@@ -416,7 +416,7 @@ class WebcamTSeq(WebcamT):
 
         # build the sequences
         X = torch.zeros(self.max_len, 3, self.out_shape[0], self.out_shape[1])
-        mask = torch.zeros(self.max_len, 1, self.out_shape[0], self.out_shape[1])
+        mask = torch.zeros(self.max_len, 3, self.out_shape[0], self.out_shape[1])
         density = torch.zeros(self.max_len, 1, self.out_shape[0], self.out_shape[1])
         count = torch.zeros(self.max_len)
         for j, img_f in enumerate(seq):
