@@ -11,11 +11,12 @@ class FCN_rLSTM(nn.Module):
     Zhang et al., "FCN-rLSTM: Deep spatio-temporal neural networks for vehicle counting in city cameras", ICCV 2017.
     """
 
-    def __init__(self, temporal=False, image_dim=None):
+    def __init__(self, temporal=False, image_dim=None, dataset='TRANCOS'):
         r"""
         Args:
             temporal: whether to have or not the LSTM block in the network (default: `False`).
             image_dim: tuple (height, width) with image dimensions, only needed if `temporal` is `True` (default: `None`).
+            dataset: name of the dataset to use (default: `TRANCOS`).
         """
         super(FCN_rLSTM, self).__init__()
 
@@ -23,6 +24,7 @@ class FCN_rLSTM(nn.Module):
             raise Exception('If `temporal` is `True`, `image_dim` must be provided')
 
         self.temporal = temporal
+        self.dataset = dataset
 
         self.conv_blocks = nn.ModuleList()
         self.conv_blocks.append(
@@ -113,7 +115,10 @@ class FCN_rLSTM(nn.Module):
             T, N, C, H, W = X.shape
             X = X.reshape(T*N, C, H, W)
             if mask is not None:
-                mask = mask.reshape(T*N, 1, H, W)
+                if self.dataset == 'TRANCOS':
+                    mask = mask.reshape(T*N, 1, H, W)
+                else:
+                    mask = mask.reshape(T*N, 3, H, W)
         # else X has shape (N, C, H, W)
 
         if mask is not None:
