@@ -11,7 +11,7 @@ class FCN_rLSTM(nn.Module):
     Zhang et al., "FCN-rLSTM: Deep spatio-temporal neural networks for vehicle counting in city cameras", ICCV 2017.
     """
 
-    def __init__(self, temporal=False, image_dim=None, dataset='TRANCOS'):
+    def __init__(self, temporal=False, image_dim=None, dataname='TRANCOS'):
         r"""
         Args:
             temporal: whether to have or not the LSTM block in the network (default: `False`).
@@ -24,7 +24,7 @@ class FCN_rLSTM(nn.Module):
             raise Exception('If `temporal` is `True`, `image_dim` must be provided')
 
         self.temporal = temporal
-        self.dataset = dataset
+        self.dataname = dataname
 
         self.conv_blocks = nn.ModuleList()
         self.conv_blocks.append(

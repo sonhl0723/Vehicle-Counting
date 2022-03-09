@@ -86,7 +86,7 @@ def main():
         model = torch.load(args['model_path']).to(device)
         print("Existing model loaded")
     else:
-        model = FCN_rLSTM(temporal=True, image_dim=(train_data[0][0].shape[2:]), dataset=args['dataset']).to(device)
+        model = FCN_rLSTM(temporal=True, image_dim=(train_data[0][0].shape[2:]), dataname=args['dataset']).to(device)
         print("New model loaded")
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
