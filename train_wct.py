@@ -16,7 +16,7 @@ import plotter
 
 def get_data_loaders(args_path, args_shape, train_transform, valid_transform, args_gamma, args_valid, args_batch_size, file_name):
     if args_valid > 0:
-        data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
+        data = WebcamT(path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, file_name=file_name)
 
         valid_indices = set(random.sample(range(len(data)), int(len(data)*args_valid)))  # randomly choose some images for validation
         train_indices = set(range(len(data))) - valid_indices  # remaining images are for training
@@ -28,7 +28,7 @@ def get_data_loaders(args_path, args_shape, train_transform, valid_transform, ar
 
         del data, valid_data
 
-        data = WebcamT(path=args_path, out_shape=args_shape, transform=valid_transform, gamma=args_gamma, file_name=file_name)
+        data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
 
         train_data = Subset(data, list(train_indices))
         train_loader = DataLoader(train_data,
@@ -38,6 +38,13 @@ def get_data_loaders(args_path, args_shape, train_transform, valid_transform, ar
         del data, train_data
 
     else:
+        train_data = WebcamT(path=args_path, out_shape=args_shape, transform=train_transform, gamma=args_gamma, file_name=file_name)
+        train_loader = DataLoader(train_data,
+                                batch_size=args_batch_size,
+                                shuffle=True)  # shuffle the data at the beginning of each epoch
+
+        del train_data
+
         valid_loader = None
 
     return train_loader, valid_loader
@@ -92,7 +99,8 @@ def main():
 
     # instantiate the model and define an optimizer
     if(args['ct']):
-        model = torch.load(args['model_path']).to(device)
+        model = FCN_rLSTM(temporal=False).to(device)
+        model.load_state_dict(torch.load(args['model_path']))
         print("Existing model loaded")
     else:
         model = FCN_rLSTM(temporal=False).to(device)
@@ -122,7 +130,7 @@ def main():
         t0 = time.time()
         
         for file_elem in file_list:
-            train_loader, valid_loader = get_data_loaders(args_dataset=args['dataset'], args_path=args['data_path'], args_shape=args['img_shape'],
+            train_loader, valid_loader = get_data_loaders(args_path=args['data_path'], args_shape=args['img_shape'],
                                                     train_transform=train_transf, valid_transform=valid_transf, args_gamma=args['gamma'],
                                                     args_valid=args['valid'], args_batch_size=args['batch_size'], file_name=file_elem)
             print("WebCamT "+file_elem+" data loaded")
