@@ -56,7 +56,7 @@ def main():
     parser.add_argument('--lr', default=1e-5, type=float, metavar='', help='learning rate')
     parser.add_argument('--ct', default=False, type=bool, metavar='', help='continue training from a previous model')
     parser.add_argument('--epochs', default=501, type=int, metavar='', help='number of training epochs')
-    parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
+    parser.add_argument('--batch_size', default=8, type=int, metavar='', help='batch size')
     parser.add_argument('--img_shape', default=[240, 352], type=int, metavar='', help='shape of the input images')
     parser.add_argument('--lambda', default=1e-2, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
@@ -97,17 +97,18 @@ def main():
 
     # instantiate the model and define an optimizer
     if(args['ct']):
-        model = FCN_rLSTM(temporal=True, image_dim=(torch.zeros(args['img_shape'], dtype=torch.int32).shape), dataname=args['dataset']).to(device)
+        model = FCN_rLSTM(temporal=True, image_dim=(torch.zeros(args['img_shape'], dtype=torch.int32).shape)).to(device)
         model.load_state_dict(torch.load(args['model_path']))
         print("Existing model loaded")
     else:
-        model = FCN_rLSTM(temporal=True, image_dim=(torch.zeros(args['img_shape'], dtype=torch.int32).shape), dataname=args['dataset']).to(device)
+        model = FCN_rLSTM(temporal=True, image_dim=(torch.zeros(args['img_shape'], dtype=torch.int32).shape)).to(device)
         print("New model loaded")
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
 
     # Tensorboard is a tool to visualize plots during training
     if args['use_tensorboard']:
+        custom_epoch = 1
         tensorboard_plt = plotter.TensorboardPlotter(log_dir=args['log_dir'])
         args_str = '\n'.join(['{}={} | '.format(k, v) for k, v in args.items()])
         tensorboard_plt.text_plot("Train Args", args_str,0)
@@ -183,10 +184,25 @@ def main():
         print('time: {:.0f} seconds'.format(t1-t0))
 
         if args['use_tensorboard']:
-            tensorboard_plt.loss_plot('Global Loss', 'train', train_loss, epoch)
-            tensorboard_plt.loss_plot('Density Loss', 'train', train_density_loss, epoch)
-            tensorboard_plt.loss_plot('Count Loss', 'train', train_count_loss, epoch)
-            tensorboard_plt.loss_plot('Count Error', 'train', train_count_err, epoch)
+            # tensorboard_plt.loss_plot('Global Loss', 'train', train_loss, epoch)
+            # tensorboard_plt.loss_plot('Density Loss', 'train', train_density_loss, epoch)
+            # tensorboard_plt.loss_plot('Count Loss', 'train', train_count_loss, epoch)
+            # tensorboard_plt.loss_plot('Count Error', 'train', train_count_err, epoch)
+
+            # # show a few training examples (images + density maps)
+            # X *= mask  # show the active region only
+            # X, mask, density, count = X.transpose(1, 0), mask.transpose(1, 0), density.transpose(1, 0), count.transpose(1, 0)
+            # density_pred, count_pred = density_pred.transpose(1, 0), count_pred.transpose(1, 0)
+            # N, L, C, H, W = X.shape
+            # X, density, count = X.reshape(N*L, C, H, W).cpu().numpy(), density.reshape(N*L, 1, H, W).cpu().numpy(), count.reshape(N*L).cpu().numpy()
+            # density_pred, count_pred = density_pred.reshape(N*L, 1, H, W).detach().cpu().numpy(), count_pred.reshape(N*L).detach().cpu().numpy()
+            # n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
+            # show_images(tensorboard_plt, 'Ground Truth', 'train', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            # show_images(tensorboard_plt, 'Prediction', 'train', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            tensorboard_plt.loss_plot('Global Loss', 'train', train_loss, custom_epoch)
+            tensorboard_plt.loss_plot('Density Loss', 'train', train_density_loss, custom_epoch)
+            tensorboard_plt.loss_plot('Count Loss', 'train', train_count_loss, custom_epoch)
+            tensorboard_plt.loss_plot('Count Error', 'train', train_count_err, custom_epoch)
 
             # show a few training examples (images + density maps)
             X *= mask  # show the active region only
@@ -196,8 +212,8 @@ def main():
             X, density, count = X.reshape(N*L, C, H, W).cpu().numpy(), density.reshape(N*L, 1, H, W).cpu().numpy(), count.reshape(N*L).cpu().numpy()
             density_pred, count_pred = density_pred.reshape(N*L, 1, H, W).detach().cpu().numpy(), count_pred.reshape(N*L).detach().cpu().numpy()
             n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
-            show_images(tensorboard_plt, 'Ground Truth', 'train', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
-            show_images(tensorboard_plt, 'Prediction', 'train', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            show_images(tensorboard_plt, 'Ground Truth', 'train', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=custom_epoch)
+            show_images(tensorboard_plt, 'Prediction', 'train', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=custom_epoch)
 
         del train_loader, X, density, count
         
@@ -253,16 +269,37 @@ def main():
 
         if args['use_tensorboard']:
             # Single plot for all validation losses
-            tensorboard_plt.loss_plot('Global Loss', 'valid', valid_loss, epoch)
-            tensorboard_plt.loss_plot('Density Loss', 'valid', valid_density_loss, epoch)
-            tensorboard_plt.loss_plot('Count Loss', 'valid', valid_count_loss, epoch)
-            tensorboard_plt.loss_plot('Count Error', 'valid', valid_count_err, epoch)
+            # tensorboard_plt.loss_plot('Global Loss', 'valid', valid_loss, epoch)
+            # tensorboard_plt.loss_plot('Density Loss', 'valid', valid_density_loss, epoch)
+            # tensorboard_plt.loss_plot('Count Loss', 'valid', valid_count_loss, epoch)
+            # tensorboard_plt.loss_plot('Count Error', 'valid', valid_count_err, epoch)
+
+            # # Overlap plot for validation losses
+            # tensorboard_plt.overlap_plot('Global Loss',{'train':train_loss,'valid':valid_loss}, epoch)
+            # tensorboard_plt.overlap_plot('Density Loss',{'train':train_density_loss,'valid':valid_density_loss}, epoch)
+            # tensorboard_plt.overlap_plot('Count Loss',{'train':train_count_loss,'valid':valid_count_loss}, epoch)
+            # tensorboard_plt.overlap_plot('Count Error',{'train':train_count_err,'valid':valid_count_err}, epoch)
+
+            # # show a few training examples (images + density maps)
+            # X *= mask  # show the active region only
+            # X, mask, density, count = X.transpose(1, 0), mask.transpose(1, 0), density.transpose(1, 0), count.transpose(1, 0)
+            # density_pred, count_pred = density_pred.transpose(1, 0), count_pred.transpose(1, 0)
+            # N, L, C, H, W = X.shape
+            # X, density, count = X.reshape(N*L, C, H, W).cpu().numpy(), density.reshape(N*L, 1, H, W).cpu().numpy(), count.reshape(N*L).cpu().numpy()
+            # density_pred, count_pred = density_pred.reshape(N*L, 1, H, W).detach().cpu().numpy(), count_pred.reshape(N*L).detach().cpu().numpy()
+            # n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
+            # show_images(tensorboard_plt, 'Ground Truth', 'valid', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            # show_images(tensorboard_plt, 'Prediction', 'valid', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            tensorboard_plt.loss_plot('Global Loss', 'valid', valid_loss, custom_epoch)
+            tensorboard_plt.loss_plot('Density Loss', 'valid', valid_density_loss, custom_epoch)
+            tensorboard_plt.loss_plot('Count Loss', 'valid', valid_count_loss, custom_epoch)
+            tensorboard_plt.loss_plot('Count Error', 'valid', valid_count_err, custom_epoch)
 
             # Overlap plot for validation losses
-            tensorboard_plt.overlap_plot('Global Loss',{'train':train_loss,'valid':valid_loss}, epoch)
-            tensorboard_plt.overlap_plot('Density Loss',{'train':train_density_loss,'valid':valid_density_loss}, epoch)
-            tensorboard_plt.overlap_plot('Count Loss',{'train':train_count_loss,'valid':valid_count_loss}, epoch)
-            tensorboard_plt.overlap_plot('Count Error',{'train':train_count_err,'valid':valid_count_err}, epoch)
+            tensorboard_plt.overlap_plot('Global Loss',{'train':train_loss,'valid':valid_loss}, custom_epoch)
+            tensorboard_plt.overlap_plot('Density Loss',{'train':train_density_loss,'valid':valid_density_loss}, custom_epoch)
+            tensorboard_plt.overlap_plot('Count Loss',{'train':train_count_loss,'valid':valid_count_loss}, custom_epoch)
+            tensorboard_plt.overlap_plot('Count Error',{'train':train_count_err,'valid':valid_count_err}, custom_epoch)
 
             # show a few training examples (images + density maps)
             X *= mask  # show the active region only
@@ -272,9 +309,10 @@ def main():
             X, density, count = X.reshape(N*L, C, H, W).cpu().numpy(), density.reshape(N*L, 1, H, W).cpu().numpy(), count.reshape(N*L).cpu().numpy()
             density_pred, count_pred = density_pred.reshape(N*L, 1, H, W).detach().cpu().numpy(), count_pred.reshape(N*L).detach().cpu().numpy()
             n2show = min(args['n2show'], X.shape[0])  # show args['n2show'] images at most
-            show_images(tensorboard_plt, 'Ground Truth', 'valid', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
-            show_images(tensorboard_plt, 'Prediction', 'valid', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=epoch)
+            show_images(tensorboard_plt, 'Ground Truth', 'valid', X[0:n2show], density[0:n2show], count[0:n2show], shape=args['tb_img_shape'],global_step=custom_epoch)
+            show_images(tensorboard_plt, 'Prediction', 'valid', X[0:n2show], density_pred[0:n2show], count_pred[0:n2show], shape=args['tb_img_shape'],global_step=custom_epoch)
 
+        custom_epoch = custom_epoch + 1
         del valid_loader, X, density, count
 
     if args['use_tensorboard']:

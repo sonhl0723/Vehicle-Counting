@@ -10,6 +10,7 @@ from PIL import Image
 from skimage import io
 import numpy as np
 import skimage.transform as SkT
+import torch
 
 from utils import density_map
 
@@ -37,10 +38,11 @@ def mk_bndboxes(path, image_files):
 def load_example(img_f, bndboxes, out_shape, gamma, path):
         X = io.imread(os.path.join(path, img_f))
         mask_f = os.path.join(img_f.split(os.sep)[0], img_f.split(os.sep)[1])+'_msk.png'
-        mask = Image.open(os.path.join(path, mask_f))
+        mask = Image.open(os.path.join(path, mask_f)).convert('L')
         mask = np.array(mask)
         mask = mask[:, :, np.newaxis].astype('float32')
 
+        # device = 'cuda:0'
         # X, mask = torch.from_numpy(X).to(device), torch.from_numpy(mask).to(device)
 
         H_orig, W_orig = X.shape[0], X.shape[1]
