@@ -69,7 +69,7 @@ def load_example(img_f, bndboxes, out_shape, gamma, path):
 def main():
     parser = argparse.ArgumentParser(description='Save WebCamT Dataset to .pickle format', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--path', default='./data/WebCamT', type=str, metavar='', help='WebCamT Dataset path')
-    parser.add_argument('--img_shape', default=[240,352], type=int, metavar='', help='shape of the input images')
+    parser.add_argument('--img_shape', default=[120,160], type=int, metavar='', help='shape of the input images')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     args = vars(parser.parse_args())
     
