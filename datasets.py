@@ -249,9 +249,9 @@ class WebcamT(Dataset):
         self.image_files = []
 
         with gzip.open(self.path + '/vehicle_pixel_info.pickle', 'rb') as f:
-            data = pickle.load(f)
+            info_data = pickle.load(f)
 
-        data_keys = list(data.keys())
+        data_keys = list(info_data.keys())
         data_keys.sort()
 
         sep_flag = self.file_name.find('_')
@@ -272,7 +272,7 @@ class WebcamT(Dataset):
             else:
                 self.image_files.append(img)
                 for element in data[img]:
-                    self.bndboxes[img].append(element)
+                    self.bndboxes[img].appen=d(element)
 
         del data
 
@@ -293,17 +293,10 @@ class WebcamT(Dataset):
         if self.load_all:
             # load all the data into memory
             self.images, self.masks, self.densities = [], [], []
-            # for img_f in self.image_files:
-            #     X, mask, density = self.load_example(img_f)
-            #     self.images.append(X)
-            #     self.masks.append(mask)
-            #     self.densities.append(density)
             with gzip.open(self.path + '/' + self.file_name + '.pickle', 'rb') as f:
                 data = pickle.load(f)
 
             self.images, self.masks, self.densities = data['images'], data['masks'], data['densities']
-            # for mask in data['masks']:
-            #   self.masks.append(np.squeeze(mask, axis=2))
 
             del data
 
@@ -318,6 +311,10 @@ class WebcamT(Dataset):
                     self.image_files = self.image_files[half:]
 
     def __len__(self):
+        print("X : "+str(len(self.images)))
+        print("masks : "+str(len(self.masks)))
+        print("densities : "+str(len(self.densities)))
+
         return len(self.image_files)
 
     def __getitem__(self, i):
@@ -390,6 +387,9 @@ class WebcamTSeq(WebcamT):
         self.max_len = max_len if (max_len is not None) else max([len(seq) for seq in self.seqs])   
 
     def __len__(self):
+        print("X : "+str(len(self.images)))
+        print("masks : "+str(len(self.masks)))
+        print("densities : "+str(len(self.densities)))
         return len(self.seqs)
 
     def __getitem__(self, i):
