@@ -272,7 +272,7 @@ class WebcamT(Dataset):
             else:
                 self.image_files.append(img)
                 for element in data[img]:
-                    self.bndboxes[img].appennd(element)
+                    self.bndboxes[img].append(element)
 
         del data
 
