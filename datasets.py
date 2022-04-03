@@ -368,7 +368,7 @@ class WebcamTSeq(WebcamT):
         self.img2idx = {img: idx for idx, img in enumerate(self.image_files)}  # hash table from file names to indices
         self.seqs = []
         for i, img_f in enumerate(self.image_files):
-            seq_id = img_f.split(os.sep)
+            seq_id = img_f.split(os.sep)[0]
             if i == 0:
                 self.seqs.append([img_f])
                 prev_seq_id = seq_id
