@@ -58,8 +58,7 @@ def load_example(img_f, bndboxes, out_shape, gamma, path):
         # compute the density map
         img_centers = []
         for xmin, ymin, xmax, ymax in bndboxes:
-          img_centers.append([int(xmax-(xmax - xmin)/2), int(ymax-(ymax - ymin)/2)])
-        # img_centers = [xmax-(int((xmax - xmin)/2.), ymax-int((ymax - ymin)/2.)) for xmin, ymin, xmax, ymax in bndboxes]
+          img_centers.append((int(np.absolute(xmax-np.absolute(xmax - xmin))/2.), int(np.absolute(ymax-np.absolute(ymax - ymin))/2.)))
         # img_centers = [(int((xmax - xmin)/2.), int((ymax - ymin)/2.)) for xmin, ymin, xmax, ymax in bndboxes]
         gammas=gamma*np.ones((len(img_centers), 2))
         # gammas = gamma*np.array([[1./np.absolute(xmax - xmin+0.001), 1./np.absolute(ymax - ymin+0.001)] for xmin, ymin, xmax, ymax in bndboxes])

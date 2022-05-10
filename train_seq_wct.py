@@ -21,20 +21,20 @@ def get_data_loaders(args_path, args_shape, train_transform, args_gamma, args_ba
 
     del train_data
 
-    return train_loader
+    return train_loader, None
 
 def main():
     parser = argparse.ArgumentParser(description='Train FCN-rLSTM in WebCamT dataset (sequential version).', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-m', '--model_path', default='./model/fcn_rlstm_wct.pth', type=str, metavar='', help='model file (output of train)')
     parser.add_argument('-d', '--dataset', default='WebCamT', type=str, metavar='', help='dataset')
     parser.add_argument('-p', '--data_path', default='./data/WebCamT', type=str, metavar='', help='data directory path')
-    parser.add_argument('--valid', default=0.2, type=float, metavar='', help='fraction of the training data for validation')
-    parser.add_argument('--lr', default=1e-4, type=float, metavar='', help='learning rate')
+    parser.add_argument('--valid', default=0, type=float, metavar='', help='fraction of the training data for validation')
+    parser.add_argument('--lr', default=1e-5, type=float, metavar='', help='learning rate')
     parser.add_argument('--ct', default=False, type=bool, metavar='', help='continue training from a previous model')
-    parser.add_argument('--epochs', default=501, type=int, metavar='', help='number of training epochs')
+    parser.add_argument('--epochs', default=200, type=int, metavar='', help='number of training epochs')
     parser.add_argument('--batch_size', default=32, type=int, metavar='', help='batch size')
     parser.add_argument('--img_shape', default=[120, 160], type=int, metavar='', help='shape of the input images')
-    parser.add_argument('--lambda', default=1e-2, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
+    parser.add_argument('--lambda', default=1e-3, type=float, metavar='', help='trade-off between density estimation and vehicle count losses (see eq. 7 in the paper)')
     parser.add_argument('--gamma', default=1e3, type=float, metavar='', help='precision parameter of the Gaussian kernel (inverse of variance)')
     parser.add_argument('--max_len', default=5, type=int, metavar='', help='maximum sequence length')
     parser.add_argument('--weight_decay', default=0., type=float, metavar='', help='weight decay regularization')
@@ -91,7 +91,7 @@ def main():
         t0 = time.time()
 
         for file_elem in file_list:
-            train_loader = get_data_loaders(args_path=args['data_path'], args_shape=args['img_shape'], train_transform=NP_T.ToTensor(),
+            train_loader, valid_loader = get_data_loaders(args_path=args['data_path'], args_shape=args['img_shape'], train_transform=NP_T.ToTensor(),
             args_gamma=args['gamma'], args_batch_size=args['batch_size'], file_name=file_elem, args_max_len=args['max_len'])
 
             print("WebCamT "+file_elem+" data loaded")
