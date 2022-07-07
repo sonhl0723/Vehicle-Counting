@@ -10,11 +10,9 @@ from PIL import Image
 from skimage import io
 import numpy as np
 import skimage.transform as SkT
-import torch
 
 from utils import density_map
 
-import matplotlib.pyplot as plt
 import torchvision.transforms.functional as TF
 
 
@@ -59,10 +57,7 @@ def load_example(img_f, bndboxes, out_shape, gamma, path):
         img_centers = []
         for xmin, ymin, xmax, ymax in bndboxes:
           img_centers.append((int(np.absolute(xmax-np.absolute(xmax - xmin))/2.), int(np.absolute(ymax-np.absolute(ymax - ymin))/2.)))
-        # img_centers = [(int((xmax - xmin)/2.), int((ymax - ymin)/2.)) for xmin, ymin, xmax, ymax in bndboxes]
         gammas=gamma*np.ones((len(img_centers), 2))
-        # gammas = gamma*np.array([[1./np.absolute(xmax - xmin+0.001), 1./np.absolute(ymax - ymin+0.001)] for xmin, ymin, xmax, ymax in bndboxes])
-        # gammas = self.gamma*np.ones((len(bndboxes), 2))
         density = density_map(
             (H_orig, W_orig),
             img_centers,

@@ -39,9 +39,7 @@ def main():
     device = 'cuda:0' if (args['use_cuda'] and torch.cuda.is_available()) else 'cpu'
     print('device:', device)
     
-    file_list = ['164', '166', '170_1', '170_2', '173_1', '173_2', '181', '253_1', '253_2', '398_1', '398_2',
-            '403_1', '403_2', '410_1', '410_2', '495_1', '495_2', '511_1', '511_2', '551_1', '551_2',
-            '572_1', '572_2', '691_1', '691_2', '846_1', '846_2', '928', 'bigbus']
+    file_list = ['928']
 
     # instantiate the model
     model = FCN_rLSTM(temporal=True, image_dim=(torch.zeros(args['img_shape'], dtype=torch.int32).shape)).to(device)
