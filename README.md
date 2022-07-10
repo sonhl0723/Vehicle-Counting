@@ -1,4 +1,4 @@
-# FCN-rLSTM model trained on webcamt dataset
+# FCN-rLSTM model trained on webcamt dataset <img alt="Python" src ="https://img.shields.io/badge/python-informational"/> <img alt="Python" src ="https://img.shields.io/badge/pytorch-red"/>
 Capstone project : Density map estimation &amp; Vehicle Counting
 <hr/>
 
