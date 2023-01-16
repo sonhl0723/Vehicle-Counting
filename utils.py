@@ -43,8 +43,7 @@ def show_images(plt, tag, type, X, density, count, shape=None, global_step=0):
     Xh[:, 1, :, :] *= 1 - density
     Xh[:, 2, :, :] *= 1 - density
     density = np.tile(density[:, np.newaxis, :, :], (1, 3, 1, 1))
-
-    ## Tensorboard Version  ## => tensorboard add_image는 4차원이면 Tensor로 변환 필수? tensorboard는 이미지 한개만 허용 뭔가 매번 싯팔 학습때마다 돌려야할것 같은 느낌이 드는데 기분 탓이길 바람ㅎㅎ
+    
     plt.img_plot(tag + ' Highlighted' + '/' + type, torch.Tensor(Xh), global_step)
     plt.text_plot(tag + ' Highlighted' + '/' + type, labels_str, global_step)
     plt.img_plot(tag + ' Density Maps' + '/' + type, torch.Tensor(density), global_step)
